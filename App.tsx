@@ -8,7 +8,7 @@ import { PersistGate } from 'redux-persist/integration/react';
 
 import { store, persistor } from './src/store';
 import { GameProvider } from './src/game/GameContext';
-import { WalletProvider } from './src/utils/WalletContext';
+import { WalletProvider } from './src/contexts/WalletContext';
 
 // Screens
 import HomeScreen from './src/screens/HomeScreen';
