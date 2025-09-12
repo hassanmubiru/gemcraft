@@ -186,6 +186,32 @@ const GameResultScreen: React.FC<GameResultScreenProps> = ({ route }) => {
 
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
+          {success && !rewardsClaimed && walletState.isConnected && (
+            <TouchableOpacity
+              style={[styles.primaryButton, isClaimingRewards && styles.disabledButton]}
+              onPress={claimRewards}
+              disabled={isClaimingRewards}
+            >
+              {isClaimingRewards ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                  <Text style={styles.primaryButtonText}>Claiming...</Text>
+                </View>
+              ) : (
+                <Text style={styles.primaryButtonText}>💰 Claim Rewards</Text>
+              )}
+            </TouchableOpacity>
+          )}
+          
+          {success && !walletState.isConnected && (
+            <TouchableOpacity
+              style={styles.walletButton}
+              onPress={() => navigation.navigate('Wallet' as never)}
+            >
+              <Text style={styles.walletButtonText}>🔗 Connect Wallet to Claim</Text>
+            </TouchableOpacity>
+          )}
+          
           <TouchableOpacity
             style={styles.primaryButton}
             onPress={() => navigation.navigate('LevelSelect' as never)}
