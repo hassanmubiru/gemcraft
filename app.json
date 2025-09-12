@@ -1,0 +1,65 @@
+{
+  "expo": {
+    "name": "GemCraft",
+    "slug": "gemcraft",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1a1a2e"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.gemcraft.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1a1a2e"
+      },
+      "package": "com.gemcraft.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "static",
+      "name": "GemCraft",
+      "shortName": "GemCraft",
+      "description": "A modern jewel-gem match-3 puzzle game on Celo blockchain",
+      "themeColor": "#1a1a2e",
+      "backgroundColor": "#1a1a2e",
+      "display": "standalone",
+      "orientation": "portrait",
+      "startUrl": "/",
+      "scope": "/",
+      "lang": "en",
+      "dir": "ltr"
+    },
+    "plugins": [
+      "expo-dev-client",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "newArchEnabled": false
+          },
+          "android": {
+            "newArchEnabled": false
+          }
+        }
+      ]
+    ],
+    "scheme": "gemcraft",
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id-here"
+      }
+    }
+  }
+}

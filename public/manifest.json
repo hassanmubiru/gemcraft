@@ -1,0 +1,82 @@
+{
+  "name": "GemCraft - Match-3 Puzzle Game",
+  "short_name": "GemCraft",
+  "description": "A modern jewel-gem match-3 puzzle game built on Celo blockchain",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#1a1a2e",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/screenshot-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Play Game",
+      "short_name": "Play",
+      "description": "Start playing GemCraft",
+      "url": "/game",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Leaderboard",
+      "short_name": "Scores",
+      "description": "View global leaderboard",
+      "url": "/leaderboard",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  }
+}

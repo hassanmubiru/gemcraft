@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="theme-color" content="#1a1a2e" />
+    <meta name="description" content="A modern jewel-gem match-3 puzzle game built on Celo blockchain" />
+    <meta name="keywords" content="match-3, puzzle, game, celo, blockchain, nft, crypto" />
+    <meta name="author" content="GemCraft Team" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://gemcraft.app/" />
+    <meta property="og:title" content="GemCraft - Match-3 Puzzle Game on Celo" />
+    <meta property="og:description" content="A modern jewel-gem match-3 puzzle game built on Celo blockchain" />
+    <meta property="og:image" content="https://gemcraft.app/og-image.png" />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://gemcraft.app/" />
+    <meta property="twitter:title" content="GemCraft - Match-3 Puzzle Game on Celo" />
+    <meta property="twitter:description" content="A modern jewel-gem match-3 puzzle game built on Celo blockchain" />
+    <meta property="twitter:image" content="https://gemcraft.app/og-image.png" />
+    
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#1a1a2e" />
+    
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://alfajores-forno.celo-testnet.org" />
+    <link rel="preconnect" href="https://explorer.celo.org" />
+    
+    <title>GemCraft - Match-3 Puzzle Game on Celo</title>
+    
+    <style>
+        /* Loading screen styles */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        }
+        
+        .loading-logo {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            animation: pulse 2s infinite;
+        }
+        
+        .loading-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 2rem;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #333;
+            border-top: 4px solid #4CAF50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        .loading-progress {
+            width: 200px;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            margin-top: 2rem;
+            overflow: hidden;
+        }
+        
+        .loading-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            width: 0%;
+            animation: progress 3s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes progress {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+        }
+        
+        /* Hide loading screen when app loads */
+        .app-loaded #loading-screen {
+            display: none;
+        }
+        
+        /* Install prompt styles */
+        .install-prompt {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: #16213e;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            display: none;
+        }
+        
+        .install-prompt.show {
+            display: block;
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        .install-prompt-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .install-prompt-text {
+            flex: 1;
+            margin-right: 15px;
+        }
+        
+        .install-prompt-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .install-prompt-description {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .install-prompt-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .install-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .install-btn:hover {
+            background: #45a049;
+        }
+        
+        .dismiss-btn {
+            background: transparent;
+            color: #a0a0a0;
+            border: 1px solid #a0a0a0;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        
+        .dismiss-btn:hover {
+            background: #a0a0a0;
+            color: white;
+        }
+        
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <noscript>
+        <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
+            <h1>JavaScript Required</h1>
+            <p>GemCraft requires JavaScript to run. Please enable JavaScript in your browser and refresh the page.</p>
+        </div>
+    </noscript>
+    
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="loading-logo">💎</div>
+        <div class="loading-text">GemCraft</div>
+        <div class="loading-spinner"></div>
+        <div class="loading-progress">
+            <div class="loading-progress-bar"></div>
+        </div>
+    </div>
+    
+    <!-- Install Prompt -->
+    <div id="install-prompt" class="install-prompt">
+        <div class="install-prompt-content">
+            <div class="install-prompt-text">
+                <div class="install-prompt-title">Install GemCraft</div>
+                <div class="install-prompt-description">Add to your home screen for quick access</div>
+            </div>
+            <div class="install-prompt-buttons">
+                <button id="install-btn" class="install-btn">Install</button>
+                <button id="dismiss-btn" class="dismiss-btn">Later</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- React App Root -->
+    <div id="root"></div>
+    
+    <script>
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                        console.log('SW registered: ', registration);
+                        
+                        // Check for updates
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // New content is available, show update prompt
+                                    if (confirm('New version available! Reload to update?')) {
+                                        window.location.reload();
+                                    }
+                                }
+                            });
+                        });
+                    })
+                    .catch((registrationError) => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+        
+        // PWA Install Prompt
+        let deferredPrompt;
+        const installPrompt = document.getElementById('install-prompt');
+        const installBtn = document.getElementById('install-btn');
+        const dismissBtn = document.getElementById('dismiss-btn');
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent Chrome 67 and earlier from automatically showing the prompt
+            e.preventDefault();
+            // Stash the event so it can be triggered later
+            deferredPrompt = e;
+            // Show the install prompt
+            installPrompt.classList.add('show');
+        });
+        
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                // Show the install prompt
+                deferredPrompt.prompt();
+                // Wait for the user to respond to the prompt
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response to the install prompt: ${outcome}`);
+                // Clear the deferredPrompt
+                deferredPrompt = null;
+                // Hide the install prompt
+                installPrompt.classList.remove('show');
+            }
+        });
+        
+        dismissBtn.addEventListener('click', () => {
+            installPrompt.classList.remove('show');
+            // Store dismissal in localStorage
+            localStorage.setItem('install-prompt-dismissed', Date.now().toString());
+        });
+        
+        // Check if install prompt was recently dismissed
+        const dismissedTime = localStorage.getItem('install-prompt-dismissed');
+        if (dismissedTime && Date.now() - parseInt(dismissedTime) < 7 * 24 * 60 * 60 * 1000) {
+            // Don't show prompt if dismissed within last 7 days
+            installPrompt.style.display = 'none';
+        }
+        
+        // Hide loading screen when app loads
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.body.classList.add('app-loaded');
+            }, 1000);
+        });
+        
+        // Handle app visibility changes
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                // App is hidden, pause game if needed
+                console.log('App hidden');
+            } else {
+                // App is visible, resume game if needed
+                console.log('App visible');
+            }
+        });
+        
+        // Handle online/offline status
+        window.addEventListener('online', () => {
+            console.log('App is online');
+            // Sync any pending data
+        });
+        
+        window.addEventListener('offline', () => {
+            console.log('App is offline');
+            // Show offline indicator
+        });
+        
+        // Performance monitoring
+        if ('performance' in window) {
+            window.addEventListener('load', () => {
+                setTimeout(() => {
+                    const perfData = performance.getEntriesByType('navigation')[0];
+                    console.log('Page load time:', perfData.loadEventEnd - perfData.loadEventStart, 'ms');
+                }, 0);
+            });
+        }
+    </script>
+</body>
+</html>
