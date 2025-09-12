@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,8 +6,12 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Dimensions,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useWallet } from '../contexts/WalletContext';
+import { createContractInteraction, CONTRACT_ADDRESSES } from '../utils/ContractInteraction';
 
 const { width, height } = Dimensions.get('window');
 
@@ -28,6 +32,12 @@ interface GameResultScreenProps {
 const GameResultScreen: React.FC<GameResultScreenProps> = ({ route }) => {
   const navigation = useNavigation();
   const { score, success, level } = route.params;
+  const { walletState, updateBalance } = useWallet();
+  
+  const [isClaimingRewards, setIsClaimingRewards] = useState(false);
+  const [rewardsClaimed, setRewardsClaimed] = useState(false);
+  const [nftMinted, setNftMinted] = useState(false);
+  const [actualReward, setActualReward] = useState<string>('0');
 
   const getStars = (): number => {
     const percentage = (score / level.targetScore) * 100;
