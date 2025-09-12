@@ -14,7 +14,7 @@ import { LeaderboardEntry } from '../types/blockchain';
 const EMPTY_LEADERBOARD: LeaderboardEntry[] = [];
 
 export default function LeaderboardScreen() {
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(MOCK_LEADERBOARD);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(EMPTY_LEADERBOARD);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedTab, setSelectedTab] = useState<'global' | 'friends'>('global');
 
@@ -187,8 +187,16 @@ export default function LeaderboardScreen() {
                 Connect with friends to see their scores and compete together!
               </Text>
             </View>
-          ) : (
+          ) : leaderboard.length > 0 ? (
             leaderboard.map((entry, index) => renderLeaderboardEntry(entry, index))
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateIcon}>🏆</Text>
+              <Text style={styles.emptyStateTitle}>No Scores Yet</Text>
+              <Text style={styles.emptyStateText}>
+                Be the first to play and claim the top spot on the leaderboard!
+              </Text>
+            </View>
           )}
         </View>
 
