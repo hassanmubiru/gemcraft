@@ -47,15 +47,66 @@ const GameResultScreen: React.FC<GameResultScreenProps> = ({ route }) => {
     return 0;
   };
 
+  // Claim rewards from blockchain
+  const claimRewards = async () => {
+    if (!walletState.isConnected || !walletState.kit) {
+      Alert.alert('Wallet Not Connected', 'Please connect your wallet to claim rewards.');
+      return;
+    }
+
+    setIsClaimingRewards(true);
+    
+    try {
+      const contractAddress = CONTRACT_ADDRESSES.alfajores.GemCraftRewards;
+      if (contractAddress === '0x0000000000000000000000000000000000000000') {
+        Alert.alert('Contract Not Deployed', 'The rewards contract is not yet deployed. Please try again later.');
+        return;
+      }
+
+      const contractInteraction = createContractInteraction(contractAddress, walletState.kit);
+      
+      const result = await contractInteraction.completeLevel(
+        level.id,
+        score,
+        level.targetScore
+      );
+
+      if (result.success) {
+        setRewardsClaimed(true);
+        setActualReward(result.cUSDReward || '0');
+        setNftMinted(result.nftMinted || false);
+        
+        // Update wallet balance
+        await updateBalance();
+        
+        Alert.alert(
+          'Rewards Claimed!',
+          `You earned ${result.cUSDReward} cUSD${result.nftMinted ? ' and a rare NFT!' : '!'}`
+        );
+      } else {
+        Alert.alert('Claim Failed', result.error || 'Failed to claim rewards');
+      }
+    } catch (error) {
+      console.error('Error claiming rewards:', error);
+      Alert.alert('Error', 'Failed to claim rewards. Please try again.');
+    } finally {
+      setIsClaimingRewards(false);
+    }
+  };
+
   const getRewardText = (): string => {
     if (!success) return 'Better luck next time!';
+    
+    if (rewardsClaimed) {
+      return `You earned ${actualReward} cUSD${nftMinted ? ' and a rare NFT!' : '!'}`;
+    }
     
     const stars = getStars();
     const baseReward = 0.1;
     const starMultiplier = stars * 0.1;
     const totalReward = baseReward + starMultiplier;
     
-    return `You earned ${totalReward.toFixed(2)} cUSD!`;
+    return `You can earn ${totalReward.toFixed(2)} cUSD!`;
   };
 
   const renderStars = () => {
