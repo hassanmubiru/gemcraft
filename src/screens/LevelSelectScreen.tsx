@@ -16,12 +16,63 @@ const { width } = Dimensions.get('window');
 const LEVELS_PER_ROW = 3;
 const LEVEL_SIZE = (width - 60) / LEVELS_PER_ROW;
 
+// Sample levels for development
+const SAMPLE_LEVELS: LevelConfig[] = [
+  {
+    id: 1,
+    name: "First Steps",
+    description: "Match 3 gems to get started",
+    targetScore: 1000,
+    moves: 20,
+    unlocked: true,
+    stars: 0,
+  },
+  {
+    id: 2,
+    name: "Gem Collector",
+    description: "Reach 2000 points in 15 moves",
+    targetScore: 2000,
+    moves: 15,
+    unlocked: true,
+    stars: 0,
+  },
+  {
+    id: 3,
+    name: "Speed Challenge",
+    description: "Score 3000 points in 2 minutes",
+    targetScore: 3000,
+    moves: 30,
+    timeLimit: 120,
+    unlocked: true,
+    stars: 0,
+  },
+  {
+    id: 4,
+    name: "Master Level",
+    description: "Ultimate challenge - 5000 points in 10 moves",
+    targetScore: 5000,
+    moves: 10,
+    unlocked: false,
+    stars: 0,
+  },
+  {
+    id: 5,
+    name: "Expert Challenge",
+    description: "Reach 8000 points in 5 minutes",
+    targetScore: 8000,
+    moves: 50,
+    timeLimit: 300,
+    unlocked: false,
+    stars: 0,
+  },
+];
+
 // Levels will be loaded from blockchain or local storage
 const EMPTY_LEVELS: LevelConfig[] = [];
 
 export default function LevelSelectScreen() {
   const navigation = useNavigation<LevelSelectScreenNavigationProp>();
-  const [levels, setLevels] = useState<LevelConfig[]>(EMPTY_LEVELS);
+  const [levels, setLevels] = useState<LevelConfig[]>(SAMPLE_LEVELS);
 
   const handleLevelPress = (level: LevelConfig) => {
     if (level.unlocked) {
