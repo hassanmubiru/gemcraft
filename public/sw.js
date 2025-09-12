@@ -30,7 +30,15 @@ self.addEventListener('install', (event) => {
     caches.open(STATIC_CACHE_NAME)
       .then((cache) => {
         console.log('Service Worker: Caching static files');
-        return cache.addAll(STATIC_FILES);
+        // Cache files individually to handle missing files gracefully
+        return Promise.allSettled(
+          STATIC_FILES.map(file => 
+            cache.add(file).catch(err => {
+              console.warn(`Service Worker: Failed to cache ${file}:`, err);
+              return null;
+            })
+          )
+        );
       })
       .then(() => {
         console.log('Service Worker: Static files cached');
@@ -330,6 +338,13 @@ self.addEventListener('message', (event) => {
   }
   
   if (event.data && event.data.type === 'GET_VERSION') {
-    event.ports[0].postMessage({ version: CACHE_NAME });
+    if (event.ports && event.ports[0]) {
+      event.ports[0].postMessage({ version: CACHE_NAME });
+    }
+  }
+  
+  // Always respond to messages to prevent the async response error
+  if (event.ports && event.ports[0]) {
+    event.ports[0].postMessage({ status: 'received' });
   }
 });
