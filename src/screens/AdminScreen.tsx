@@ -12,44 +12,41 @@ import {
 } from 'react-native';
 import { AdminConfig, AdminStats } from '../types/blockchain';
 
-// Mock admin data
-const MOCK_ADMIN_CONFIG: AdminConfig = {
+// Default empty admin configuration
+const DEFAULT_ADMIN_CONFIG: AdminConfig = {
   rewardAmounts: {
-    dailyBonus: 1,
-    levelComplete: 0.5,
-    achievement: 2,
-    comboBonus: 0.1,
+    dailyBonus: 0,
+    levelComplete: 0,
+    achievement: 0,
+    comboBonus: 0,
   },
   nftDropRates: {
-    common: 70,
-    rare: 20,
-    epic: 8,
-    legendary: 2,
+    common: 0,
+    rare: 0,
+    epic: 0,
+    legendary: 0,
   },
   contractAddresses: {
-    rewards: '0x1234...5678',
-    nftGem: '0x2345...6789',
-    leaderboard: '0x3456...7890',
+    rewards: '',
+    nftGem: '',
+    leaderboard: '',
     testCUSD: '0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1',
     testCELO: '0xF194afDf50B03a69Ea33B7c6CF6a2A4E7B3F8C2D',
   },
-  isPaused: false,
+  isPaused: true,
 };
 
-const MOCK_ADMIN_STATS: AdminStats = {
-  totalRewardsDistributed: 1250.5,
-  totalNFTsMinted: 45,
-  activePlayers: 128,
-  totalTransactions: 234,
-  contractBalance: [
-    { symbol: 'cUSD', balance: '10000.0', decimals: 18, address: '0x1234...5678' },
-    { symbol: 'CELO', balance: '500.0', decimals: 18, address: '0x2345...6789' },
-  ],
+const DEFAULT_ADMIN_STATS: AdminStats = {
+  totalRewardsDistributed: 0,
+  totalNFTsMinted: 0,
+  activePlayers: 0,
+  totalTransactions: 0,
+  contractBalance: [],
 };
 
 export default function AdminScreen() {
-  const [config, setConfig] = useState<AdminConfig>(MOCK_ADMIN_CONFIG);
-  const [stats, setStats] = useState<AdminStats>(MOCK_ADMIN_STATS);
+  const [config, setConfig] = useState<AdminConfig>(DEFAULT_ADMIN_CONFIG);
+  const [stats, setStats] = useState<AdminStats>(DEFAULT_ADMIN_STATS);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleUpdateRewardAmount = (type: keyof typeof config.rewardAmounts, value: string) => {
