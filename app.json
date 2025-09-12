@@ -27,8 +27,7 @@
     },
     "web": {
       "favicon": "./assets/favicon.png",
-      "bundler": "metro",
-      "output": "single",
+      "bundler": "webpack",
       "name": "GemCraft",
       "shortName": "GemCraft",
       "description": "A modern jewel-gem match-3 puzzle game on Celo blockchain",
