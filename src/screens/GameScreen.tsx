@@ -21,12 +21,16 @@ import {
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 interface GameScreenProps {
-  level: LevelConfig;
-  onGameEnd: (score: number, success: boolean) => void;
-  onBack: () => void;
+  route: {
+    params: {
+      level: LevelConfig;
+    };
+  };
+  navigation: any;
 }
 
-const GameScreen: React.FC<GameScreenProps> = ({ level, onGameEnd, onBack }) => {
+const GameScreen: React.FC<GameScreenProps> = ({ route, navigation }) => {
+  const { level } = route.params;
   const [gameState, setGameState] = useState<GameState>({
     board: createGameBoard(8, 8),
     score: 0,
@@ -259,7 +263,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ level, onGameEnd, onBack }) => 
           </View>
         </View>
       )}
-    </View>
+        </View>
   );
 };
 
