@@ -62,7 +62,11 @@ const GameScreen: React.FC<GameScreenProps> = ({ route, navigation }) => {
           return { ...prev, timeLeft: prev.timeLeft - 1 };
         } else {
           // Time's up
-          onGameEnd(prev.score, prev.score >= prev.targetScore);
+          navigation.navigate('GameResult', {
+            score: prev.score,
+            success: prev.score >= prev.targetScore,
+            level: level,
+          });
           return { ...prev, isGameOver: true };
         }
       });
