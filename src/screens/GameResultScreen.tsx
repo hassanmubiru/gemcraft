@@ -1,0 +1,286 @@
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  SafeAreaView,
+  Dimensions,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+
+const { width, height } = Dimensions.get('window');
+
+interface GameResultScreenProps {
+  route: {
+    params: {
+      score: number;
+      success: boolean;
+      level: {
+        id: number;
+        name: string;
+        targetScore: number;
+      };
+    };
+  };
+}
+
+const GameResultScreen: React.FC<GameResultScreenProps> = ({ route }) => {
+  const navigation = useNavigation();
+  const { score, success, level } = route.params;
+
+  const getStars = (): number => {
+    const percentage = (score / level.targetScore) * 100;
+    if (percentage >= 100) return 3;
+    if (percentage >= 75) return 2;
+    if (percentage >= 50) return 1;
+    return 0;
+  };
+
+  const getRewardText = (): string => {
+    if (!success) return 'Better luck next time!';
+    
+    const stars = getStars();
+    const baseReward = 0.1;
+    const starMultiplier = stars * 0.1;
+    const totalReward = baseReward + starMultiplier;
+    
+    return `You earned ${totalReward.toFixed(2)} cUSD!`;
+  };
+
+  const renderStars = () => {
+    const stars = getStars();
+    const starElements = [];
+    
+    for (let i = 0; i < 3; i++) {
+      starElements.push(
+        <Text
+          key={i}
+          style={[
+            styles.star,
+            i < stars && styles.starFilled,
+          ]}
+        >
+          ⭐
+        </Text>
+      );
+    }
+    
+    return starElements;
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        {/* Result Header */}
+        <View style={styles.header}>
+          <Text style={styles.resultIcon}>
+            {success ? '🎉' : '😔'}
+          </Text>
+          <Text style={styles.resultTitle}>
+            {success ? 'Level Complete!' : 'Level Failed'}
+          </Text>
+          <Text style={styles.levelName}>{level.name}</Text>
+        </View>
+
+        {/* Score Display */}
+        <View style={styles.scoreContainer}>
+          <Text style={styles.scoreLabel}>Your Score</Text>
+          <Text style={styles.scoreValue}>{score.toLocaleString()}</Text>
+          <Text style={styles.targetScore}>
+            Target: {level.targetScore.toLocaleString()}
+          </Text>
+        </View>
+
+        {/* Stars */}
+        <View style={styles.starsContainer}>
+          <Text style={styles.starsLabel}>Rating</Text>
+          <View style={styles.starsRow}>
+            {renderStars()}
+          </View>
+        </View>
+
+        {/* Rewards */}
+        <View style={styles.rewardsContainer}>
+          <Text style={styles.rewardsTitle}>Rewards</Text>
+          <Text style={styles.rewardsText}>{getRewardText()}</Text>
+          
+          {success && (
+            <View style={styles.rewardBreakdown}>
+              <View style={styles.rewardItem}>
+                <Text style={styles.rewardIcon}>💰</Text>
+                <Text style={styles.rewardText}>cUSD: +0.1</Text>
+              </View>
+              <View style={styles.rewardItem}>
+                <Text style={styles.rewardIcon}>💎</Text>
+                <Text style={styles.rewardText}>Gems: +10</Text>
+              </View>
+              <View style={styles.rewardItem}>
+                <Text style={styles.rewardIcon}>🎨</Text>
+                <Text style={styles.rewardText}>NFT Chance: 1%</Text>
+              </View>
+            </View>
+          )}
+        </View>
+
+        {/* Action Buttons */}
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={() => navigation.navigate('LevelSelect' as never)}
+          >
+            <Text style={styles.primaryButtonText}>Continue</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={() => navigation.navigate('Home' as never)}
+          >
+            <Text style={styles.secondaryButtonText}>Main Menu</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#1a1a2e',
+  },
+  content: {
+    flex: 1,
+    padding: 20,
+    justifyContent: 'center',
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  resultIcon: {
+    fontSize: 80,
+    marginBottom: 20,
+  },
+  resultTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  levelName: {
+    fontSize: 18,
+    color: '#A0A0A0',
+    textAlign: 'center',
+  },
+  scoreContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    padding: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  scoreLabel: {
+    fontSize: 16,
+    color: '#A0A0A0',
+    marginBottom: 10,
+  },
+  scoreValue: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: '#2ECC71',
+    marginBottom: 5,
+  },
+  targetScore: {
+    fontSize: 14,
+    color: '#A0A0A0',
+  },
+  starsContainer: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  starsLabel: {
+    fontSize: 16,
+    color: '#A0A0A0',
+    marginBottom: 15,
+  },
+  starsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  star: {
+    fontSize: 40,
+    color: '#333',
+    marginHorizontal: 10,
+  },
+  starFilled: {
+    color: '#FFD700',
+  },
+  rewardsContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    padding: 20,
+    borderRadius: 15,
+    marginBottom: 40,
+  },
+  rewardsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  rewardsText: {
+    fontSize: 16,
+    color: '#2ECC71',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  rewardBreakdown: {
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.2)',
+    paddingTop: 15,
+  },
+  rewardItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  rewardIcon: {
+    fontSize: 20,
+    marginRight: 10,
+  },
+  rewardText: {
+    fontSize: 14,
+    color: '#FFFFFF',
+  },
+  actionsContainer: {
+    gap: 15,
+  },
+  primaryButton: {
+    backgroundColor: '#2ECC71',
+    paddingVertical: 15,
+    borderRadius: 25,
+    alignItems: 'center',
+  },
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  secondaryButton: {
+    backgroundColor: 'transparent',
+    paddingVertical: 15,
+    borderRadius: 25,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#A0A0A0',
+  },
+  secondaryButtonText: {
+    color: '#A0A0A0',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
+
+export default GameResultScreen;

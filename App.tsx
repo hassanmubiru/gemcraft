@@ -13,6 +13,7 @@ import { WalletProvider } from './src/utils/WalletContext';
 // Screens
 import HomeScreen from './src/screens/HomeScreen';
 import GameScreen from './src/screens/GameScreen';
+import GameResultScreen from './src/screens/GameResultScreen';
 import LevelSelectScreen from './src/screens/LevelSelectScreen';
 import WalletScreen from './src/screens/WalletScreen';
 import LeaderboardScreen from './src/screens/LeaderboardScreen';
@@ -62,6 +63,14 @@ export default function App() {
                     component={GameScreen}
                     options={{ 
                       title: 'Playing',
+                      headerShown: false 
+                    }}
+                  />
+                  <Stack.Screen 
+                    name="GameResult" 
+                    component={GameResultScreen}
+                    options={{ 
+                      title: 'Game Result',
                       headerShown: false 
                     }}
                   />
