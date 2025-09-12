@@ -42,7 +42,6 @@
       "dir": "ltr"
     },
     "plugins": [
-      "expo-dev-client",
       [
         "expo-build-properties",
         {
