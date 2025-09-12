@@ -16,68 +16,12 @@ const { width } = Dimensions.get('window');
 const LEVELS_PER_ROW = 3;
 const LEVEL_SIZE = (width - 60) / LEVELS_PER_ROW;
 
-// Mock level data - in a real app, this would come from a server or local storage
-const MOCK_LEVELS: LevelConfig[] = [
-  {
-    id: 1,
-    name: 'Tutorial',
-    targetScore: 1000,
-    moves: 20,
-    description: 'Learn the basics of matching gems',
-    unlocked: true,
-    stars: 3,
-  },
-  {
-    id: 2,
-    name: 'First Steps',
-    targetScore: 1500,
-    moves: 25,
-    description: 'Match gems to reach the target score',
-    unlocked: true,
-    stars: 2,
-  },
-  {
-    id: 3,
-    name: 'Power Up',
-    targetScore: 2000,
-    moves: 30,
-    description: 'Discover your first power-up',
-    unlocked: true,
-    stars: 1,
-  },
-  {
-    id: 4,
-    name: 'Combo Master',
-    targetScore: 2500,
-    moves: 25,
-    description: 'Create amazing combos',
-    unlocked: true,
-    stars: 0,
-  },
-  {
-    id: 5,
-    name: 'Speed Run',
-    targetScore: 3000,
-    moves: 20,
-    timeLimit: 60,
-    description: 'Complete the level in 60 seconds',
-    unlocked: true,
-    stars: 0,
-  },
-  {
-    id: 6,
-    name: 'Locked Level',
-    targetScore: 3500,
-    moves: 30,
-    description: 'Complete level 5 to unlock',
-    unlocked: false,
-    stars: 0,
-  },
-];
+// Levels will be loaded from blockchain or local storage
+const EMPTY_LEVELS: LevelConfig[] = [];
 
 export default function LevelSelectScreen() {
   const navigation = useNavigation<LevelSelectScreenNavigationProp>();
-  const [levels, setLevels] = useState<LevelConfig[]>(MOCK_LEVELS);
+  const [levels, setLevels] = useState<LevelConfig[]>(EMPTY_LEVELS);
 
   const handleLevelPress = (level: LevelConfig) => {
     if (level.unlocked) {
@@ -192,15 +136,25 @@ export default function LevelSelectScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {levelRows.map(renderLevelRow)}
-        
-        {/* Coming Soon */}
-        <View style={styles.comingSoonContainer}>
-          <Text style={styles.comingSoonText}>More levels coming soon!</Text>
-          <Text style={styles.comingSoonSubtext}>
-            Complete all levels to unlock special challenges
-          </Text>
-        </View>
+        {levels.length > 0 ? (
+          <>
+            {levelRows.map(renderLevelRow)}
+            {/* Coming Soon */}
+            <View style={styles.comingSoonContainer}>
+              <Text style={styles.comingSoonText}>More levels coming soon!</Text>
+              <Text style={styles.comingSoonSubtext}>
+                Complete all levels to unlock special challenges
+              </Text>
+            </View>
+          </>
+        ) : (
+          <View style={styles.emptyStateContainer}>
+            <Text style={styles.emptyStateText}>No levels available</Text>
+            <Text style={styles.emptyStateSubtext}>
+              Levels will be loaded from the blockchain
+            </Text>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -334,5 +288,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#a0a0a0',
     textAlign: 'center',
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyStateText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: '#a0a0a0',
+    textAlign: 'center',
+    paddingHorizontal: 40,
   },
 });
