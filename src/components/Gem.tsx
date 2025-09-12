@@ -75,6 +75,14 @@ const Gem: React.FC<GemProps> = ({
         return '🌈';
       case SpecialGemType.MULTIPLIER:
         return '✨';
+      case SpecialGemType.ROW_CLEAR:
+        return '➡️';
+      case SpecialGemType.COLUMN_CLEAR:
+        return '⬇️';
+      case SpecialGemType.EXPLOSIVE:
+        return '💥';
+      case SpecialGemType.COLOR_BOMB:
+        return '🎆';
       default:
         return '⭐';
     }

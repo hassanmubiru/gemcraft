@@ -26,6 +26,16 @@ const SAMPLE_LEVELS: LevelConfig[] = [
     moves: 20,
     unlocked: true,
     stars: 0,
+    gameMode: 'score',
+    specialObjectives: [
+      {
+        type: 'score',
+        target: 1000,
+        description: 'Reach 1000 points',
+        completed: false,
+        current: 0,
+      }
+    ],
   },
   {
     id: 2,
@@ -35,6 +45,16 @@ const SAMPLE_LEVELS: LevelConfig[] = [
     moves: 15,
     unlocked: true,
     stars: 0,
+    gameMode: 'score',
+    specialObjectives: [
+      {
+        type: 'score',
+        target: 2000,
+        description: 'Reach 2000 points',
+        completed: false,
+        current: 0,
+      }
+    ],
   },
   {
     id: 3,
@@ -45,15 +65,41 @@ const SAMPLE_LEVELS: LevelConfig[] = [
     timeLimit: 120,
     unlocked: true,
     stars: 0,
+    gameMode: 'score',
+    specialObjectives: [
+      {
+        type: 'score',
+        target: 3000,
+        description: 'Reach 3000 points',
+        completed: false,
+        current: 0,
+      }
+    ],
   },
   {
     id: 4,
-    name: "Master Level",
-    description: "Ultimate challenge - 5000 points in 10 moves",
-    targetScore: 5000,
-    moves: 10,
+    name: "Obstacle Breaker",
+    description: "Clear all stone obstacles",
+    targetScore: 1500,
+    moves: 25,
     unlocked: false,
     stars: 0,
+    gameMode: 'clear_obstacles',
+    obstacles: [
+      { type: 'stone', position: { row: 2, col: 2 }, health: 2 },
+      { type: 'stone', position: { row: 2, col: 5 }, health: 2 },
+      { type: 'ice', position: { row: 5, col: 2 }, health: 1 },
+      { type: 'ice', position: { row: 5, col: 5 }, health: 1 },
+    ],
+    specialObjectives: [
+      {
+        type: 'clear_obstacles',
+        target: 4,
+        description: 'Clear all obstacles',
+        completed: false,
+        current: 0,
+      }
+    ],
   },
   {
     id: 5,
@@ -64,6 +110,29 @@ const SAMPLE_LEVELS: LevelConfig[] = [
     timeLimit: 300,
     unlocked: false,
     stars: 0,
+    gameMode: 'mixed',
+    obstacles: [
+      { type: 'locked', position: { row: 1, col: 1 }, health: 1 },
+      { type: 'locked', position: { row: 1, col: 6 }, health: 1 },
+      { type: 'metal', position: { row: 6, col: 1 }, health: 3 },
+      { type: 'metal', position: { row: 6, col: 6 }, health: 3 },
+    ],
+    specialObjectives: [
+      {
+        type: 'score',
+        target: 8000,
+        description: 'Reach 8000 points',
+        completed: false,
+        current: 0,
+      },
+      {
+        type: 'clear_obstacles',
+        target: 4,
+        description: 'Clear all obstacles',
+        completed: false,
+        current: 0,
+      }
+    ],
   },
 ];
 

@@ -82,7 +82,7 @@ const wouldCreateMatch = (gems: Gem[][], row: number, col: number, gemType: GemT
   return verticalCount >= 3;
 };
 
-// Find all matches on the board
+// Find all matches on the board including L/T shapes
 export const findMatches = (board: GameBoard): Match[] => {
   const matches: Match[] = [];
   const visited = new Set<string>();
@@ -145,7 +145,123 @@ export const findMatches = (board: GameBoard): Match[] => {
     }
   }
   
+  // Find L and T shapes
+  const lTMatches = findLAndTShapes(board, visited);
+  matches.push(...lTMatches);
+  
   return matches;
+};
+
+// Find L and T shaped matches
+const findLAndTShapes = (board: GameBoard, visited: Set<string>): Match[] => {
+  const matches: Match[] = [];
+  
+  for (let row = 0; row < board.rows - 2; row++) {
+    for (let col = 0; col < board.cols - 2; col++) {
+      const centerGem = board.gems[row + 1][col + 1];
+      if (!centerGem || visited.has(centerGem.id)) continue;
+      
+      // Check for T-shape (horizontal line with vertical extension)
+      const horizontalLine = getHorizontalLine(board, row + 1, col, centerGem.type);
+      const verticalLine = getVerticalLine(board, row, col + 1, centerGem.type);
+      
+      if (horizontalLine.length >= 3 && verticalLine.length >= 3) {
+        const tShapeGems = [...horizontalLine, ...verticalLine];
+        const uniqueGems = tShapeGems.filter((gem, index, arr) => 
+          arr.findIndex(g => g.id === gem.id) === index
+        );
+        
+        if (uniqueGems.length >= 5) {
+          uniqueGems.forEach(g => visited.add(g.id));
+          matches.push({
+            gems: uniqueGems,
+            type: 't_shape',
+            length: uniqueGems.length,
+          });
+        }
+      }
+      
+      // Check for L-shape (corner pattern)
+      const lShapeGems = findLShape(board, row, col, centerGem.type);
+      if (lShapeGems.length >= 5) {
+        lShapeGems.forEach(g => visited.add(g.id));
+        matches.push({
+          gems: lShapeGems,
+          type: 'l_shape',
+          length: lShapeGems.length,
+        });
+      }
+    }
+  }
+  
+  return matches;
+};
+
+// Helper function to get horizontal line of same type
+const getHorizontalLine = (board: GameBoard, row: number, startCol: number, gemType: GemType): Gem[] => {
+  const line: Gem[] = [];
+  
+  for (let col = startCol; col < board.cols; col++) {
+    const gem = board.gems[row][col];
+    if (gem && gem.type === gemType) {
+      line.push(gem);
+    } else {
+      break;
+    }
+  }
+  
+  return line;
+};
+
+// Helper function to get vertical line of same type
+const getVerticalLine = (board: GameBoard, startRow: number, col: number, gemType: GemType): Gem[] => {
+  const line: Gem[] = [];
+  
+  for (let row = startRow; row < board.rows; row++) {
+    const gem = board.gems[row][col];
+    if (gem && gem.type === gemType) {
+      line.push(gem);
+    } else {
+      break;
+    }
+  }
+  
+  return line;
+};
+
+// Helper function to find L-shape patterns
+const findLShape = (board: GameBoard, startRow: number, startCol: number, gemType: GemType): Gem[] => {
+  const lShape: Gem[] = [];
+  
+  // Check different L-shape orientations
+  const orientations = [
+    // L pointing down-right
+    { hRow: startRow + 1, hCol: startCol, vRow: startRow, vCol: startCol + 1 },
+    // L pointing down-left
+    { hRow: startRow + 1, hCol: startCol + 1, vRow: startRow, vCol: startCol },
+    // L pointing up-right
+    { hRow: startRow, hCol: startCol, vRow: startRow + 1, vCol: startCol + 1 },
+    // L pointing up-left
+    { hRow: startRow, hCol: startCol + 1, vRow: startRow + 1, vCol: startCol },
+  ];
+  
+  for (const orientation of orientations) {
+    const horizontalPart = getHorizontalLine(board, orientation.hRow, orientation.hCol, gemType);
+    const verticalPart = getVerticalLine(board, orientation.vRow, orientation.vCol, gemType);
+    
+    if (horizontalPart.length >= 3 && verticalPart.length >= 3) {
+      const combined = [...horizontalPart, ...verticalPart];
+      const unique = combined.filter((gem, index, arr) => 
+        arr.findIndex(g => g.id === gem.id) === index
+      );
+      
+      if (unique.length >= 5) {
+        return unique;
+      }
+    }
+  }
+  
+  return lShape;
 };
 
 // Check if two positions are adjacent
@@ -227,8 +343,8 @@ export const removeMatches = (board: GameBoard, matches: Match[]): GameBoard => 
   return newBoard;
 };
 
-// Calculate score for matches
-export const calculateMatchScore = (matches: Match[]): number => {
+// Calculate score for matches with combo multipliers
+export const calculateMatchScore = (matches: Match[], cascadeLevel: number = 0): number => {
   let totalScore = 0;
   
   matches.forEach(match => {
@@ -237,16 +353,38 @@ export const calculateMatchScore = (matches: Match[]): number => {
     // Bonus for longer matches
     if (match.length >= 4) baseScore *= 2;
     if (match.length >= 5) baseScore *= 3;
+    if (match.length >= 6) baseScore *= 4;
     
     // Bonus for special patterns
-    if (match.length >= 4) {
-      baseScore += 50; // L-shape or T-shape bonus
+    if (match.type === 'l_shape' || match.type === 't_shape') {
+      baseScore += 100; // L/T-shape bonus
     }
     
-    totalScore += baseScore;
+    // Cascade multiplier (increases with each cascade)
+    const cascadeMultiplier = 1 + (cascadeLevel * 0.5);
+    baseScore *= cascadeMultiplier;
+    
+    totalScore += Math.floor(baseScore);
   });
   
   return totalScore;
+};
+
+// Determine what power-up should be created based on match
+export const getPowerUpForMatch = (match: Match): SpecialGemType | null => {
+  if (match.length >= 5) {
+    return SpecialGemType.COLOR_BOMB; // 5+ gems = color bomb
+  } else if (match.length === 4) {
+    if (match.type === 'horizontal') {
+      return SpecialGemType.ROW_CLEAR; // 4 horizontal = row clear
+    } else if (match.type === 'vertical') {
+      return SpecialGemType.COLUMN_CLEAR; // 4 vertical = column clear
+    }
+  } else if (match.type === 'l_shape' || match.type === 't_shape') {
+    return SpecialGemType.EXPLOSIVE; // L/T shapes = explosive
+  }
+  
+  return null;
 };
 
 // Check if a swap would create a match
@@ -286,7 +424,70 @@ export const findPossibleMoves = (board: GameBoard): Position[][] => {
   return possibleMoves;
 };
 
-// Process a complete turn (swap, find matches, remove, refill)
+// Apply power-up effects
+export const applyPowerUpEffect = (board: GameBoard, gem: Gem): { affectedGems: Gem[], newBoard: GameBoard } => {
+  const affectedGems: Gem[] = [];
+  let newBoard = { ...board, gems: board.gems.map(row => row.map(g => ({ ...g }))) };
+  
+  if (!gem.isSpecial || !gem.specialType) {
+    return { affectedGems, newBoard };
+  }
+  
+  switch (gem.specialType) {
+    case SpecialGemType.ROW_CLEAR:
+      // Clear entire row
+      for (let col = 0; col < newBoard.cols; col++) {
+        const targetGem = newBoard.gems[gem.position.row][col];
+        if (targetGem) {
+          affectedGems.push(targetGem);
+          newBoard.gems[gem.position.row][col] = null as any;
+        }
+      }
+      break;
+      
+    case SpecialGemType.COLUMN_CLEAR:
+      // Clear entire column
+      for (let row = 0; row < newBoard.rows; row++) {
+        const targetGem = newBoard.gems[row][gem.position.col];
+        if (targetGem) {
+          affectedGems.push(targetGem);
+          newBoard.gems[row][gem.position.col] = null as any;
+        }
+      }
+      break;
+      
+    case SpecialGemType.EXPLOSIVE:
+      // Clear 3x3 area around gem
+      for (let row = Math.max(0, gem.position.row - 1); row <= Math.min(newBoard.rows - 1, gem.position.row + 1); row++) {
+        for (let col = Math.max(0, gem.position.col - 1); col <= Math.min(newBoard.cols - 1, gem.position.col + 1); col++) {
+          const targetGem = newBoard.gems[row][col];
+          if (targetGem) {
+            affectedGems.push(targetGem);
+            newBoard.gems[row][col] = null as any;
+          }
+        }
+      }
+      break;
+      
+    case SpecialGemType.COLOR_BOMB:
+      // Clear all gems of the same type
+      const targetType = gem.type;
+      for (let row = 0; row < newBoard.rows; row++) {
+        for (let col = 0; col < newBoard.cols; col++) {
+          const targetGem = newBoard.gems[row][col];
+          if (targetGem && targetGem.type === targetType) {
+            affectedGems.push(targetGem);
+            newBoard.gems[row][col] = null as any;
+          }
+        }
+      }
+      break;
+  }
+  
+  return { affectedGems, newBoard };
+};
+
+// Process a complete turn with power-ups and cascades
 export const processTurn = (board: GameBoard, pos1: Position, pos2: Position): SwapResult => {
   if (!areAdjacent(pos1, pos2)) {
     return {
@@ -309,7 +510,27 @@ export const processTurn = (board: GameBoard, pos1: Position, pos2: Position): S
     if (matches.length === 0) break;
     
     allMatches.push(...matches);
-    totalScore += calculateMatchScore(matches);
+    totalScore += calculateMatchScore(matches, cascades);
+    
+    // Check for power-up creation
+    const powerUpMatches = matches.filter(match => getPowerUpForMatch(match) !== null);
+    if (powerUpMatches.length > 0) {
+      // Create power-up at the center of the largest match
+      const largestMatch = powerUpMatches.reduce((prev, current) => 
+        current.length > prev.length ? current : prev
+      );
+      const centerGem = largestMatch.gems[Math.floor(largestMatch.gems.length / 2)];
+      const powerUpType = getPowerUpForMatch(largestMatch);
+      
+      if (powerUpType) {
+        currentBoard.gems[centerGem.position.row][centerGem.position.col] = createSpecialGem(
+          centerGem.type,
+          centerGem.position,
+          powerUpType
+        );
+      }
+    }
+    
     currentBoard = removeMatches(currentBoard, matches);
     cascades++;
   }

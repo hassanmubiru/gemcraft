@@ -11,6 +11,22 @@ export interface Gem {
   position: Position;
   isSpecial?: boolean;
   specialType?: SpecialGemType;
+  obstacle?: Obstacle;
+}
+
+export interface Obstacle {
+  type: ObstacleType;
+  health: number;
+  maxHealth: number;
+}
+
+export enum ObstacleType {
+  LOCKED = 'locked',
+  STONE = 'stone',
+  ICE = 'ice',
+  CHOCOLATE = 'chocolate',
+  WOOD = 'wood',
+  METAL = 'metal'
 }
 
 export enum GemType {
@@ -28,7 +44,11 @@ export enum SpecialGemType {
   BOMB = 'bomb',
   LIGHTNING = 'lightning',
   RAINBOW = 'rainbow',
-  MULTIPLIER = 'multiplier'
+  MULTIPLIER = 'multiplier',
+  ROW_CLEAR = 'row_clear',
+  COLUMN_CLEAR = 'column_clear',
+  EXPLOSIVE = 'explosive',
+  COLOR_BOMB = 'color_bomb'
 }
 
 export interface Match {
@@ -70,14 +90,25 @@ export interface LevelConfig {
     gems: number;
     nftChance: number;
   };
+  obstacles?: ObstacleConfig[];
+  boardSize?: { rows: number; cols: number };
+  gameMode: 'score' | 'clear_obstacles' | 'collect_items' | 'survive_time' | 'mixed';
+}
+
+export interface ObstacleConfig {
+  type: ObstacleType;
+  position: Position;
+  health: number;
 }
 
 export interface Objective {
-  type: 'score' | 'clear_gems' | 'collect_items' | 'survive_time';
+  type: 'score' | 'clear_gems' | 'collect_items' | 'survive_time' | 'clear_obstacles';
   target: number;
   description: string;
   gemType?: GemType;
+  obstacleType?: ObstacleType;
   completed: boolean;
+  current: number;
 }
 
 export interface GameStats {
