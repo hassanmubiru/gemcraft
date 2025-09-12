@@ -19,7 +19,10 @@
     "hardhat:verify": "cd contracts && npx hardhat verify --network alfajores"
   },
   "dependencies": {
-    "@celo/contractkit": "^4.0.0",
+    "@celo/contractkit": "^4.1.1",
+    "@celo/wallet-base": "^8.0.1",
+    "@celo/wallet-ledger": "^8.0.1",
+    "@celo/wallet-walletconnect": "^5.0.4",
     "@expo/metro-runtime": "^6.1.1",
     "@expo/vector-icons": "^13.0.0",
     "@react-native-async-storage/async-storage": "1.18.2",
@@ -27,7 +30,7 @@
     "@react-navigation/stack": "^6.3.17",
     "@reduxjs/toolkit": "^1.9.5",
     "@walletconnect/react-native-dapp": "^1.7.1",
-    "ethers": "^5.7.2",
+    "ethers": "^5.8.0",
     "expo": "~49.0.0",
     "expo-av": "~13.4.1",
     "expo-build-properties": "^1.0.8",
