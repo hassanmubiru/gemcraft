@@ -73,7 +73,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ route, navigation }) => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [gameState.isPaused, gameState.isGameOver, level.timeLimit, onGameEnd]);
+  }, [gameState.isPaused, gameState.isGameOver, level.timeLimit, navigation, level]);
 
   // Check win/lose conditions
   useEffect(() => {
@@ -81,18 +81,26 @@ const GameScreen: React.FC<GameScreenProps> = ({ route, navigation }) => {
 
     // Check if target score reached
     if (gameState.score >= gameState.targetScore) {
-      onGameEnd(gameState.score, true);
+      navigation.navigate('GameResult', {
+        score: gameState.score,
+        success: true,
+        level: level,
+      });
       setGameState(prev => ({ ...prev, isGameOver: true }));
       return;
     }
 
     // Check if no moves left
     if (gameState.moves <= 0 && gameState.possibleMoves.length === 0) {
-      onGameEnd(gameState.score, gameState.score >= gameState.targetScore);
+      navigation.navigate('GameResult', {
+        score: gameState.score,
+        success: gameState.score >= gameState.targetScore,
+        level: level,
+      });
       setGameState(prev => ({ ...prev, isGameOver: true }));
       return;
     }
-  }, [gameState.score, gameState.moves, gameState.possibleMoves, gameState.targetScore, onGameEnd]);
+  }, [gameState.score, gameState.moves, gameState.possibleMoves, gameState.targetScore, navigation, level]);
 
   const handleGemPress = useCallback((position: Position) => {
     if (isAnimating || gameState.isGameOver || gameState.isPaused) return;
@@ -167,7 +175,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ route, navigation }) => {
       
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={onBack}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         
@@ -261,7 +269,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ route, navigation }) => {
             <TouchableOpacity style={styles.resumeButton} onPress={handlePause}>
               <Text style={styles.resumeButtonText}>Resume Game</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.quitButton} onPress={onBack}>
+            <TouchableOpacity style={styles.quitButton} onPress={() => navigation.goBack()}>
               <Text style={styles.quitButtonText}>Quit Game</Text>
             </TouchableOpacity>
           </View>
