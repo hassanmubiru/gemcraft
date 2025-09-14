@@ -80,20 +80,15 @@ async function main() {
     try {
       console.log("\n🏆 Deploying Leaderboard contract...");
       const Leaderboard = await ethers.getContractFactory("Leaderboard");
-      const leaderboardDeployTx = await Leaderboard.deploy({
+      const leaderboard = await Leaderboard.deploy({
         gasPrice: gasPriceWithBuffer
       });
-      const leaderboardReceipt = await leaderboardDeployTx.deployTransaction.wait();
-      
-      const leaderboard = await Leaderboard.attach(leaderboardDeployTx.address);
-      console.log("✅ Leaderboard contract deployed to:", leaderboard.address);
-      console.log("   Gas used:", leaderboardReceipt.gasUsed.toString());
-      console.log("   Transaction hash:", leaderboardReceipt.transactionHash);
+      await leaderboard.waitForDeployment();
+      const leaderboardAddress = await leaderboard.getAddress();
+      console.log("✅ Leaderboard contract deployed to:", leaderboardAddress);
 
       deploymentInfo.contracts.leaderboard = {
-        address: leaderboard.address,
-        gasUsed: leaderboardReceipt.gasUsed.toString(),
-        transactionHash: leaderboardReceipt.transactionHash,
+        address: leaderboardAddress,
       };
     } catch (error) {
       console.log("⚠️  Leaderboard contract not found, skipping...");
