@@ -72,16 +72,16 @@ async function main() {
       const comboBonus = await rewards.comboBonusAmount();
       
       console.log("   ✅ Reward amounts:");
-      console.log(`      Daily Bonus: ${ethers.utils.formatEther(dailyBonus)} cUSD`);
-      console.log(`      Level Complete: ${ethers.utils.formatEther(levelComplete)} cUSD`);
-      console.log(`      Achievement: ${ethers.utils.formatEther(achievement)} cUSD`);
-      console.log(`      Combo Bonus: ${ethers.utils.formatEther(comboBonus)} cUSD`);
+      console.log(`      Daily Bonus: ${ethers.formatEther(dailyBonus)} cUSD`);
+      console.log(`      Level Complete: ${ethers.formatEther(levelComplete)} cUSD`);
+      console.log(`      Achievement: ${ethers.formatEther(achievement)} cUSD`);
+      console.log(`      Combo Bonus: ${ethers.formatEther(comboBonus)} cUSD`);
       
       rewardsTests.tests.rewardAmounts = {
-        dailyBonus: ethers.utils.formatEther(dailyBonus),
-        levelComplete: ethers.utils.formatEther(levelComplete),
-        achievement: ethers.utils.formatEther(achievement),
-        comboBonus: ethers.utils.formatEther(comboBonus),
+        dailyBonus: ethers.formatEther(dailyBonus),
+        levelComplete: ethers.formatEther(levelComplete),
+        achievement: ethers.formatEther(achievement),
+        comboBonus: ethers.formatEther(comboBonus),
         passed: true,
       };
     } catch (error) {
@@ -162,10 +162,10 @@ async function main() {
       const legendaryPrice = await nftGem.getMintPrice(3); // Legendary
       
       console.log("   ✅ Mint prices:");
-      console.log(`      Common: ${ethers.utils.formatEther(commonPrice)} cUSD`);
-      console.log(`      Rare: ${ethers.utils.formatEther(rarePrice)} cUSD`);
-      console.log(`      Epic: ${ethers.utils.formatEther(epicPrice)} cUSD`);
-      console.log(`      Legendary: ${ethers.utils.formatEther(legendaryPrice)} cUSD`);
+      console.log(`      Common: ${ethers.formatEther(commonPrice)} cUSD`);
+      console.log(`      Rare: ${ethers.formatEther(rarePrice)} cUSD`);
+      console.log(`      Epic: ${ethers.formatEther(epicPrice)} cUSD`);
+      console.log(`      Legendary: ${ethers.formatEther(legendaryPrice)} cUSD`);
       
       nftTests.tests.mintPrices = {
         common: ethers.utils.formatEther(commonPrice),
