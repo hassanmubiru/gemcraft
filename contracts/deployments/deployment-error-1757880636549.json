@@ -1,0 +1,12 @@
+{
+  "network": "alfajores",
+  "deployer": "0x50625608E728cad827066dD78F5B4e8d203619F3",
+  "deployerBalance": "4.198422844597",
+  "contracts": {},
+  "timestamp": "2025-09-14T20:10:36.493Z",
+  "blockNumber": 0,
+  "gasUsed": {},
+  "transactionHashes": {},
+  "error": "ethers.provider.getGasPrice is not a function",
+  "stack": "TypeError: ethers.provider.getGasPrice is not a function\n    at main (/home/error51/Project/Celo/gemcraft/contracts/scripts/deploy-gemcraft.js:47:42)"
+}

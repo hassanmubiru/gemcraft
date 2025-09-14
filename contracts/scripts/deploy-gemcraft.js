@@ -44,8 +44,8 @@ async function main() {
   const Rewards = await ethers.getContractFactory("Rewards");
   
   // Get current gas price and add some buffer
-  const gasPrice = await ethers.provider.getGasPrice();
-  const gasPriceWithBuffer = gasPrice * 120n / 100n; // 20% buffer
+  const gasPrice = await ethers.provider.getFeeData();
+  const gasPriceWithBuffer = gasPrice.gasPrice * 120n / 100n; // 20% buffer
   
   const rewardsDeployTx = await Rewards.deploy(CUSD_ADDRESS, CELO_ADDRESS, {
     gasPrice: gasPriceWithBuffer
@@ -90,7 +90,9 @@ async function main() {
     try {
       console.log("\n🏆 Deploying Leaderboard contract...");
       const Leaderboard = await ethers.getContractFactory("Leaderboard");
-      const leaderboardDeployTx = await Leaderboard.deploy();
+      const leaderboardDeployTx = await Leaderboard.deploy({
+        gasPrice: gasPriceWithBuffer
+      });
       const leaderboardReceipt = await leaderboardDeployTx.deployTransaction.wait();
       
       const leaderboard = await Leaderboard.attach(leaderboardDeployTx.address);
@@ -237,7 +239,7 @@ async function main() {
     console.log(`\n💾 Deployment info saved to: ${filePath}`);
     console.log("\n🎮 Ready to play GemCraft on Celo!");
 
-    return deploymentInfo;
+  return deploymentInfo;
 
   } catch (error) {
     console.error("\n❌ Deployment failed:", error);
