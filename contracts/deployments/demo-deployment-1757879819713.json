@@ -1,0 +1,29 @@
+{
+  "network": "alfajores",
+  "deployer": "0x1234567890123456789012345678901234567890",
+  "deployerBalance": "1.5",
+  "contracts": {
+    "rewards": {
+      "address": "0xabcdef1234567890abcdef1234567890abcdef12",
+      "cUSD": "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1",
+      "CELO": "0xF194afDf50B03a69Ea33B7c6CF6a2A4E7B3F8C2D",
+      "gasUsed": "2456789",
+      "transactionHash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+    },
+    "nftGem": {
+      "address": "0x9876543210fedcba9876543210fedcba98765432",
+      "baseURI": "https://api.gemcraft.celo.org/metadata/",
+      "gasUsed": "3456789",
+      "transactionHash": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+    },
+    "leaderboard": {
+      "address": "0xfedcba0987654321fedcba0987654321fedcba09",
+      "gasUsed": "1234567",
+      "transactionHash": "0x9876543210fedcba9876543210fedcba9876543210fedcba9876543210fedcba"
+    }
+  },
+  "timestamp": "2025-09-14T19:56:59.702Z",
+  "blockNumber": 12345678,
+  "gasUsed": {},
+  "transactionHashes": {}
+}
