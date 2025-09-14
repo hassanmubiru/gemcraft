@@ -20,7 +20,8 @@ async function main() {
 
   // Celo Alfajores testnet token addresses (verified)
   const CUSD_ADDRESS = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1";
-  const CELO_ADDRESS = "0xF194afDf50B03a69Ea33B7c6CF6a2A4E7B3F8C2D";
+  // CELO is the native token on Celo, so we use the zero address for it
+  const CELO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
   console.log("\n📋 Using token addresses:");
   console.log("   cUSD:", CUSD_ADDRESS);

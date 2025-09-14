@@ -26,7 +26,7 @@ module.exports = {
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 44787,
       gas: 8000000,
-      gasPrice: 20000000000, // 20 gwei
+      gasPrice: 5000000000, // 5 gwei - Celo uses lower gas prices
     },
     celo: {
       url: "https://forno.celo.org",

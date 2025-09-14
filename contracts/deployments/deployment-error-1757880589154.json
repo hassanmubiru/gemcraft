@@ -1,0 +1,12 @@
+{
+  "network": "alfajores",
+  "deployer": "0x50625608E728cad827066dD78F5B4e8d203619F3",
+  "deployerBalance": "4.198422844597",
+  "contracts": {},
+  "timestamp": "2025-09-14T20:09:46.986Z",
+  "blockNumber": 0,
+  "gasUsed": {},
+  "transactionHashes": {},
+  "error": "error_forwarding_sequencer: gas-price is less than the base-fee-floor",
+  "stack": "ProviderError: error_forwarding_sequencer: gas-price is less than the base-fee-floor\n    at HttpProvider.request (/home/error51/Project/Celo/gemcraft/contracts/node_modules/hardhat/src/internal/core/providers/http.ts:116:21)\n    at processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at HardhatEthersSigner.sendTransaction (/home/error51/Project/Celo/gemcraft/contracts/node_modules/@nomicfoundation/hardhat-ethers/src/signers.ts:181:18)\n    at ContractFactory.deploy (/home/error51/Project/Celo/gemcraft/contracts/node_modules/ethers/src.ts/contract/factory.ts:111:24)\n    at main (/home/error51/Project/Celo/gemcraft/contracts/scripts/deploy-gemcraft.js:45:29)"
+}
