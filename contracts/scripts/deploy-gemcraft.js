@@ -65,12 +65,14 @@ async function main() {
       transactionHash: rewardsReceipt.transactionHash,
     };
 
-    // 2. Deploy NFTGem Contract
-    console.log("\n💎 Deploying NFTGem contract...");
-    const NFTGem = await ethers.getContractFactory("NFTGem");
-    const baseURI = "https://api.gemcraft.celo.org/metadata/";
-    const nftGemDeployTx = await NFTGem.deploy(baseURI);
-    const nftGemReceipt = await nftGemDeployTx.deployTransaction.wait();
+  // 2. Deploy NFTGem Contract
+  console.log("\n💎 Deploying NFTGem contract...");
+  const NFTGem = await ethers.getContractFactory("NFTGem");
+  const baseURI = "https://api.gemcraft.celo.org/metadata/";
+  const nftGemDeployTx = await NFTGem.deploy(baseURI, {
+    gasPrice: gasPriceWithBuffer
+  });
+  const nftGemReceipt = await nftGemDeployTx.deployTransaction.wait();
     
     const nftGem = await NFTGem.attach(nftGemDeployTx.address);
     console.log("✅ NFTGem contract deployed to:", nftGem.address);
