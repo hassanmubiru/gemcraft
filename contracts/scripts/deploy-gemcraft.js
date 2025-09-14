@@ -106,7 +106,9 @@ async function main() {
         const fundingAmount = cUSDBalance / 2n; // Use half of available cUSD
         console.log(`   Funding Rewards contract with ${ethers.formatEther(fundingAmount)} cUSD...`);
         
-        const fundTx = await cUSD.transfer(rewards.address, fundingAmount);
+        const fundTx = await cUSD.transfer(rewardsAddress, fundingAmount, {
+          gasPrice: gasPriceWithBuffer
+        });
         await fundTx.wait();
         console.log("✅ Rewards contract funded successfully");
       } else {
@@ -159,7 +161,10 @@ async function main() {
           gem.type,
           gem.rarity,
           gem.power,
-          gem.level
+          gem.level,
+          {
+            gasPrice: gasPriceWithBuffer
+          }
         );
         await mintTx.wait();
       }
