@@ -319,11 +319,23 @@ export const beginnerLevels: LevelConfig[] = [
   }
 ];
 
-// Continue with remaining level groups...
+// Import all level groups
+import { comboExpansionLevels, intermediateStrategyLevels } from './intermediateLevels';
+import { advancedMechanicsLevels, comboMasteryLevels, hardChallengeLevels } from './advancedLevels';
+import { expertStrategyLevels, nearMasteryLevels, finalMasterLevels } from './masterLevels';
+
+// All 100 levels combined
 export const allLevels: LevelConfig[] = [
-  ...tutorialLevels,
-  ...beginnerLevels,
-  // Additional level groups will be added in separate files
+  ...tutorialLevels,           // Levels 1-10
+  ...beginnerLevels,           // Levels 11-20
+  ...comboExpansionLevels,     // Levels 21-30
+  ...intermediateStrategyLevels, // Levels 31-40
+  ...advancedMechanicsLevels,  // Levels 41-50
+  ...comboMasteryLevels,       // Levels 51-60
+  ...hardChallengeLevels,      // Levels 61-70
+  ...expertStrategyLevels,     // Levels 71-80
+  ...nearMasteryLevels,        // Levels 81-90
+  ...finalMasterLevels         // Levels 91-100
 ];
 
 export const getLevelById = (id: number): LevelConfig | undefined => {
