@@ -1,19 +1,21 @@
 const { ethers } = require("hardhat");
 
 async function main() {
-  console.log("🚀 Deploying Simple Test Contract...");
+  console.log("🚀 Deploying Simple GemCraft Contract...");
 
   try {
-    const SimpleTest = await ethers.getContractFactory("SimpleTest");
-    const simpleTest = await SimpleTest.deploy("Hello GemCraft!");
-    await simpleTest.deployed();
+    const SimpleGemCraft = await ethers.getContractFactory("SimpleGemCraft");
+    const cUSDAddress = "0x874069Fa1Eb16D44d62F6aDD3B9835bdf8af4b4";
     
-    console.log("✅ Simple Test Contract deployed to:", simpleTest.address);
-    console.log("📝 Message:", await simpleTest.getMessage());
-    console.log("🎉 Deployment successful!");
+    console.log("📦 Deploying...");
+    const contract = await SimpleGemCraft.deploy(cUSDAddress);
+    await contract.deployed();
+    
+    console.log("✅ Contract deployed to:", contract.address);
+    console.log("🎉 Success!");
 
   } catch (error) {
-    console.error("❌ Deployment failed:", error);
+    console.error("❌ Failed:", error.message);
     throw error;
   }
 }
