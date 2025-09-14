@@ -1,4 +1,15 @@
 import { Gem, GameBoard, Match, GemType, GemPower, LevelConfig, GameState } from '../types/game';
+import { 
+  findMatches, 
+  calculateMatchScore, 
+  getPowerUpForMatch, 
+  processTurn, 
+  areAdjacent,
+  createSpecialGem,
+  SpecialGemType,
+  Position
+} from '../utils/GameLogic';
+import { ContractInteraction } from '../utils/ContractInteraction';
 
 export class GameEngine {
   private board: GameBoard;
@@ -8,6 +19,12 @@ export class GameEngine {
   private isGameOver: boolean = false;
   private selectedGem: Gem | null = null;
   private combos: number = 0;
+  private contractInteraction?: ContractInteraction;
+  private blockchainRewards: {
+    cUSDReward?: string;
+    nftMinted?: boolean;
+    transactionHash?: string;
+  } = {};
 
   constructor(
     private width: number = 8,
@@ -166,86 +183,30 @@ export class GameEngine {
   }
 
   private findMatches(): Match[] {
-    const matches: Match[] = [];
-    const visited = new Set<string>();
-
-    // Check horizontal matches
-    for (let y = 0; y < this.height; y++) {
-      for (let x = 0; x < this.width - 2; x++) {
-        const gem1 = this.board.gems[y][x];
-        const gem2 = this.board.gems[y][x + 1];
-        const gem3 = this.board.gems[y][x + 2];
-
-        if (gem1.type === gem2.type && gem2.type === gem3.type) {
-          const matchGems = [gem1, gem2, gem3];
-          
-          // Extend match to the right
-          let endX = x + 3;
-          while (endX < this.width && this.board.gems[y][endX].type === gem1.type) {
-            matchGems.push(this.board.gems[y][endX]);
-            endX++;
-          }
-
-          // Extend match to the left
-          let startX = x - 1;
-          while (startX >= 0 && this.board.gems[y][startX].type === gem1.type) {
-            matchGems.unshift(this.board.gems[y][startX]);
-            startX--;
-          }
-
-          const match: Match = {
-            gems: matchGems,
-            type: matchGems.length >= 5 ? 'five_in_row' : 'horizontal',
-            power: this.getPowerForMatch(matchGems.length)
-          };
-
-          matches.push(match);
-          
-          // Mark gems as visited
-          matchGems.forEach(gem => visited.add(gem.id));
-        }
-      }
-    }
-
-    // Check vertical matches
-    for (let x = 0; x < this.width; x++) {
-      for (let y = 0; y < this.height - 2; y++) {
-        const gem1 = this.board.gems[y][x];
-        const gem2 = this.board.gems[y + 1][x];
-        const gem3 = this.board.gems[y + 2][x];
-
-        if (gem1.type === gem2.type && gem2.type === gem3.type && !visited.has(gem1.id)) {
-          const matchGems = [gem1, gem2, gem3];
-          
-          // Extend match down
-          let endY = y + 3;
-          while (endY < this.height && this.board.gems[endY][x].type === gem1.type) {
-            matchGems.push(this.board.gems[endY][x]);
-            endY++;
-          }
-
-          // Extend match up
-          let startY = y - 1;
-          while (startY >= 0 && this.board.gems[startY][x].type === gem1.type) {
-            matchGems.unshift(this.board.gems[startY][x]);
-            startY--;
-          }
-
-          const match: Match = {
-            gems: matchGems,
-            type: matchGems.length >= 5 ? 'five_in_row' : 'vertical',
-            power: this.getPowerForMatch(matchGems.length)
-          };
-
-          matches.push(match);
-          
-          // Mark gems as visited
-          matchGems.forEach(gem => visited.add(gem.id));
-        }
-      }
-    }
-
-    return matches;
+    // Convert to GameLogic format and use enhanced match detection
+    const gameBoard = {
+      gems: this.board.gems.map(row => 
+        row.map(gem => ({
+          ...gem,
+          position: { row: gem.y, col: gem.x }
+        }))
+      ),
+      rows: this.height,
+      cols: this.width
+    };
+    
+    const matches = findMatches(gameBoard);
+    
+    // Convert back to GameEngine format
+    return matches.map(match => ({
+      gems: match.gems.map(gem => ({
+        ...gem,
+        x: gem.position.col,
+        y: gem.position.row
+      })),
+      type: match.type as any,
+      power: this.getPowerForMatch(match.length)
+    }));
   }
 
   private getPowerForMatch(length: number): GemPower {
@@ -254,35 +215,60 @@ export class GameEngine {
     return 'normal';
   }
 
+  private createPowerUp(gem: Gem, powerUpType: SpecialGemType): void {
+    // Convert SpecialGemType to GemPower
+    let power: GemPower = 'normal';
+    switch (powerUpType) {
+      case SpecialGemType.ROW_CLEAR:
+        power = 'row_clear';
+        break;
+      case SpecialGemType.COLUMN_CLEAR:
+        power = 'column_clear';
+        break;
+      case SpecialGemType.EXPLOSIVE:
+        power = 'explosive';
+        break;
+      case SpecialGemType.COLOR_BOMB:
+        power = 'color_bomb';
+        break;
+    }
+    
+    // Update the gem to be a power-up
+    this.board.gems[gem.y][gem.x] = {
+      ...gem,
+      power,
+      isMatched: false
+    };
+  }
+
   private processMatches(matches: Match[]): void {
     if (matches.length === 0) return;
 
-    // Calculate score
-    let matchScore = 0;
-    matches.forEach(match => {
-      matchScore += match.gems.length * 100;
-      if (match.power !== 'normal') {
-        matchScore += 500; // Bonus for power-ups
-      }
-    });
+    // Use enhanced scoring system
+    const matchScore = calculateMatchScore(matches, this.combos);
+    this.score += matchScore;
 
-    // Apply combo multiplier
+    // Update combo counter
     if (matches.length > 1) {
       this.combos++;
-      matchScore *= Math.min(this.combos + 1, 5); // Max 5x multiplier
     } else {
       this.combos = 0;
     }
 
-    this.score += matchScore;
-
-    // Remove matched gems
+    // Remove matched gems and create power-ups
     const gemsToRemove = new Set<string>();
     matches.forEach(match => {
       match.gems.forEach(gem => {
         gemsToRemove.add(gem.id);
         gem.isMatched = true;
       });
+      
+      // Create power-up for special matches
+      const powerUpType = getPowerUpForMatch(match);
+      if (powerUpType && match.gems.length > 0) {
+        const centerGem = match.gems[Math.floor(match.gems.length / 2)];
+        this.createPowerUp(centerGem, powerUpType);
+      }
     });
 
     // Apply power-up effects
@@ -405,6 +391,59 @@ export class GameEngine {
 
   public isGameComplete(): boolean {
     return this.isGameOver;
+  }
+
+  // Blockchain integration methods
+  public setContractInteraction(contractInteraction: ContractInteraction): void {
+    this.contractInteraction = contractInteraction;
+  }
+
+  public async claimBlockchainRewards(): Promise<{
+    success: boolean;
+    cUSDReward?: string;
+    nftMinted?: boolean;
+    transactionHash?: string;
+    error?: string;
+  }> {
+    if (!this.contractInteraction || !this.levelConfig) {
+      return { success: false, error: 'Contract not connected or level config missing' };
+    }
+
+    if (!this.isGameOver || this.score < this.levelConfig.targetScore) {
+      return { success: false, error: 'Level not completed or score below target' };
+    }
+
+    try {
+      const result = await this.contractInteraction.completeLevel(
+        this.levelConfig.id,
+        this.score,
+        this.levelConfig.targetScore
+      );
+
+      if (result.success) {
+        this.blockchainRewards = {
+          cUSDReward: result.cUSDReward,
+          nftMinted: result.nftMinted,
+          transactionHash: result.txHash
+        };
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Failed to claim blockchain rewards:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  public getBlockchainRewards() {
+    return this.blockchainRewards;
+  }
+
+  public hasClaimedRewards(): boolean {
+    return !!this.blockchainRewards.transactionHash;
   }
 
   public canMakeMove(): boolean {

@@ -173,7 +173,7 @@ contract GemCraftRewards is ERC721, ERC721URIStorage, Ownable, ReentrancyGuard, 
         // Random number generation (simplified for demo)
         uint256 random = uint256(keccak256(abi.encodePacked(
             block.timestamp,
-            block.difficulty,
+            block.prevrandao,
             player,
             levelId,
             score
@@ -372,5 +372,9 @@ contract GemCraftRewards is ERC721, ERC721URIStorage, Ownable, ReentrancyGuard, 
     
     function tokenURI(uint256 tokenId) public view override(ERC721, ERC721URIStorage) returns (string memory) {
         return super.tokenURI(tokenId);
+    }
+    
+    function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721URIStorage) returns (bool) {
+        return super.supportsInterface(interfaceId);
     }
 }

@@ -10,13 +10,8 @@ import {
 } from 'react-native';
 import { GameState, Position, LevelConfig } from '../types/GameTypes';
 import GameBoardComponent from '../components/GameBoard';
-import {
-  createGameBoard,
-  findMatches,
-  processTurn,
-  findPossibleMoves,
-  calculateMatchScore,
-} from '../utils/GameLogic';
+import { GameEngine } from '../game/GameEngine';
+import { MockContractInteraction } from '../utils/MockContractInteraction';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -31,26 +26,21 @@ interface GameScreenProps {
 
 const GameScreen: React.FC<GameScreenProps> = ({ route, navigation }) => {
   const { level } = route.params;
-  const [gameState, setGameState] = useState<GameState>({
-    board: createGameBoard(8, 8),
-    score: 0,
-    moves: level.moves,
-    level: level.id,
-    targetScore: level.targetScore,
-    timeLeft: level.timeLimit,
-    isGameOver: false,
-    isPaused: false,
-    selectedGem: undefined,
-    possibleMoves: [],
+  const [gameEngine] = useState(() => {
+    const engine = new GameEngine(8, 8, level);
+    // Set up mock blockchain integration
+    const mockContract = new MockContractInteraction();
+    engine.setContractInteraction(mockContract);
+    return engine;
   });
-
+  
+  const [gameState, setGameState] = useState<GameState>(() => gameEngine.getGameState());
   const [isAnimating, setIsAnimating] = useState(false);
 
-  // Initialize possible moves
-  useEffect(() => {
-    const moves = findPossibleMoves(gameState.board);
-    setGameState(prev => ({ ...prev, possibleMoves: moves }));
-  }, [gameState.board]);
+  // Update game state when engine state changes
+  const updateGameState = useCallback(() => {
+    setGameState(gameEngine.getGameState());
+  }, [gameEngine]);
 
   // Timer countdown
   useEffect(() => {
@@ -105,42 +95,20 @@ const GameScreen: React.FC<GameScreenProps> = ({ route, navigation }) => {
   const handleGemPress = useCallback((position: Position) => {
     if (isAnimating || gameState.isGameOver || gameState.isPaused) return;
 
-    setGameState(prev => {
-      if (!prev.selectedGem) {
-        // Select first gem
-        return { ...prev, selectedGem: position };
-      } else if (prev.selectedGem.row === position.row && prev.selectedGem.col === position.col) {
-        // Deselect same gem
-        return { ...prev, selectedGem: undefined };
-      } else {
-        // Try to swap gems
-        const swapResult = processTurn(prev.board, prev.selectedGem, position);
-        
-        if (swapResult.success) {
-          setIsAnimating(true);
-          
-          // Update game state
-          const newState = {
-            ...prev,
-            board: swapResult.newBoard,
-            score: prev.score + swapResult.scoreGained,
-            moves: prev.moves - 1,
-            selectedGem: undefined,
-          };
-
-          // Reset animation after a delay
-          setTimeout(() => {
-            setIsAnimating(false);
-          }, 1000);
-
-          return newState;
-        } else {
-          // Invalid move, just deselect
-          return { ...prev, selectedGem: undefined };
-        }
-      }
-    });
-  }, [isAnimating, gameState.isGameOver, gameState.isPaused]);
+    // Convert Position to x,y coordinates for GameEngine
+    const success = gameEngine.selectGem(position.col, position.row);
+    
+    if (success) {
+      setIsAnimating(true);
+      updateGameState();
+      
+      // Reset animation after a delay
+      setTimeout(() => {
+        updateGameState();
+        setIsAnimating(false);
+      }, 1000);
+    }
+  }, [isAnimating, gameState.isGameOver, gameState.isPaused, gameEngine, updateGameState]);
 
   const handlePause = () => {
     setGameState(prev => ({ ...prev, isPaused: !prev.isPaused }));

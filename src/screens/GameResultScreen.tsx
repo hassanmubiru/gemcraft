@@ -12,6 +12,8 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useWallet } from '../contexts/WalletContext';
 import { createContractInteraction, CONTRACT_ADDRESSES } from '../utils/ContractInteraction';
+import { MockContractInteraction } from '../utils/MockContractInteraction';
+import { getLevelById } from '../data/testLevels';
 
 const { width, height } = Dimensions.get('window');
 
@@ -38,6 +40,7 @@ const GameResultScreen: React.FC<GameResultScreenProps> = ({ route }) => {
   const [rewardsClaimed, setRewardsClaimed] = useState(false);
   const [nftMinted, setNftMinted] = useState(false);
   const [actualReward, setActualReward] = useState<string>('0');
+  const [levelConfig, setLevelConfig] = useState(getLevelById(level.id));
 
   const getStars = (): number => {
     const percentage = (score / level.targetScore) * 100;
@@ -47,23 +50,13 @@ const GameResultScreen: React.FC<GameResultScreenProps> = ({ route }) => {
     return 0;
   };
 
-  // Claim rewards from blockchain
+  // Claim rewards from blockchain (using mock for testing)
   const claimRewards = async () => {
-    if (!walletState.isConnected || !walletState.kit) {
-      Alert.alert('Wallet Not Connected', 'Please connect your wallet to claim rewards.');
-      return;
-    }
-
     setIsClaimingRewards(true);
     
     try {
-      const contractAddress = CONTRACT_ADDRESSES.alfajores.GemCraftRewards;
-      if (contractAddress === '0x0000000000000000000000000000000000000000') {
-        Alert.alert('Contract Not Deployed', 'The rewards contract is not yet deployed. Please try again later.');
-        return;
-      }
-
-      const contractInteraction = createContractInteraction(contractAddress, walletState.kit);
+      // Use mock contract interaction for testing
+      const contractInteraction = new MockContractInteraction();
       
       const result = await contractInteraction.completeLevel(
         level.id,
@@ -76,12 +69,9 @@ const GameResultScreen: React.FC<GameResultScreenProps> = ({ route }) => {
         setActualReward(result.cUSDReward || '0');
         setNftMinted(result.nftMinted || false);
         
-        // Update wallet balance
-        await updateBalance();
-        
         Alert.alert(
-          'Rewards Claimed!',
-          `You earned ${result.cUSDReward} cUSD${result.nftMinted ? ' and a rare NFT!' : '!'}`
+          '🎉 Rewards Claimed!',
+          `You earned ${result.cUSDReward} cUSD${result.nftMinted ? ' and a rare NFT!' : '!'}\n\nTransaction: ${result.txHash}`
         );
       } else {
         Alert.alert('Claim Failed', result.error || 'Failed to claim rewards');
@@ -101,12 +91,15 @@ const GameResultScreen: React.FC<GameResultScreenProps> = ({ route }) => {
       return `You earned ${actualReward} cUSD${nftMinted ? ' and a rare NFT!' : '!'}`;
     }
     
-    const stars = getStars();
-    const baseReward = 0.1;
-    const starMultiplier = stars * 0.1;
-    const totalReward = baseReward + starMultiplier;
+    if (levelConfig) {
+      const stars = getStars();
+      const performanceMultiplier = stars >= 3 ? 2.0 : stars >= 2 ? 1.5 : stars >= 1 ? 1.25 : 1.0;
+      const totalReward = levelConfig.rewards.cUSD * performanceMultiplier;
+      
+      return `You can earn up to ${totalReward.toFixed(2)} cUSD!`;
+    }
     
-    return `You can earn ${totalReward.toFixed(2)} cUSD!`;
+    return 'You can earn rewards!';
   };
 
   const renderStars = () => {
@@ -166,27 +159,33 @@ const GameResultScreen: React.FC<GameResultScreenProps> = ({ route }) => {
           <Text style={styles.rewardsTitle}>Rewards</Text>
           <Text style={styles.rewardsText}>{getRewardText()}</Text>
           
-          {success && (
+          {success && levelConfig && (
             <View style={styles.rewardBreakdown}>
               <View style={styles.rewardItem}>
                 <Text style={styles.rewardIcon}>💰</Text>
-                <Text style={styles.rewardText}>cUSD: +0.1</Text>
+                <Text style={styles.rewardText}>cUSD: +{levelConfig.rewards.cUSD}</Text>
               </View>
               <View style={styles.rewardItem}>
                 <Text style={styles.rewardIcon}>💎</Text>
-                <Text style={styles.rewardText}>Gems: +10</Text>
+                <Text style={styles.rewardText}>Gems: +{levelConfig.rewards.gems}</Text>
               </View>
               <View style={styles.rewardItem}>
                 <Text style={styles.rewardIcon}>🎨</Text>
-                <Text style={styles.rewardText}>NFT Chance: 1%</Text>
+                <Text style={styles.rewardText}>NFT Chance: {levelConfig.rewards.nftChance}%</Text>
               </View>
+              {getStars() >= 2 && (
+                <View style={styles.rewardItem}>
+                  <Text style={styles.rewardIcon}>⭐</Text>
+                  <Text style={styles.rewardText}>Performance Bonus: {getStars() >= 3 ? '2x' : '1.5x'}</Text>
+                </View>
+              )}
             </View>
           )}
         </View>
 
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
-          {success && !rewardsClaimed && walletState.isConnected && (
+          {success && !rewardsClaimed && (
             <TouchableOpacity
               style={[styles.primaryButton, isClaimingRewards && styles.disabledButton]}
               onPress={claimRewards}
@@ -198,18 +197,18 @@ const GameResultScreen: React.FC<GameResultScreenProps> = ({ route }) => {
                   <Text style={styles.primaryButtonText}>Claiming...</Text>
                 </View>
               ) : (
-                <Text style={styles.primaryButtonText}>💰 Claim Rewards</Text>
+                <Text style={styles.primaryButtonText}>💰 Claim Rewards (Test Mode)</Text>
               )}
             </TouchableOpacity>
           )}
           
-          {success && !walletState.isConnected && (
-            <TouchableOpacity
-              style={styles.walletButton}
-              onPress={() => navigation.navigate('Wallet' as never)}
-            >
-              <Text style={styles.walletButtonText}>🔗 Connect Wallet to Claim</Text>
-            </TouchableOpacity>
+          {success && rewardsClaimed && (
+            <View style={styles.claimedContainer}>
+              <Text style={styles.claimedText}>✅ Rewards Claimed!</Text>
+              {nftMinted && (
+                <Text style={styles.nftText}>🎨 You also received a rare NFT!</Text>
+              )}
+            </View>
           )}
           
           <TouchableOpacity
@@ -387,6 +386,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+  },
+  claimedContainer: {
+    backgroundColor: 'rgba(46, 204, 113, 0.2)',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  claimedText: {
+    color: '#2ECC71',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  nftText: {
+    color: '#F39C12',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 
