@@ -1,0 +1,12 @@
+{
+  "network": "alfajores",
+  "deployer": "0x50625608E728cad827066dD78F5B4e8d203619F3",
+  "deployerBalance": "4.198422844597",
+  "contracts": {},
+  "timestamp": "2025-09-14T20:10:52.892Z",
+  "blockNumber": 0,
+  "gasUsed": {},
+  "transactionHashes": {},
+  "error": "Cannot read properties of undefined (reading 'wait')",
+  "stack": "TypeError: Cannot read properties of undefined (reading 'wait')\n    at main (/home/error51/Project/Celo/gemcraft/contracts/scripts/deploy-gemcraft.js:53:66)\n    at processTicksAndRejections (node:internal/process/task_queues:95:5)"
+}

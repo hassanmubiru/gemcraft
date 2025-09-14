@@ -47,12 +47,11 @@ async function main() {
   const gasPrice = await ethers.provider.getFeeData();
   const gasPriceWithBuffer = gasPrice.gasPrice * 120n / 100n; // 20% buffer
   
-  const rewardsDeployTx = await Rewards.deploy(CUSD_ADDRESS, CELO_ADDRESS, {
+  const rewards = await Rewards.deploy(CUSD_ADDRESS, CELO_ADDRESS, {
     gasPrice: gasPriceWithBuffer
   });
-  const rewardsReceipt = await rewardsDeployTx.deployTransaction.wait();
-    
-    const rewards = await Rewards.attach(rewardsDeployTx.address);
+  await rewards.waitForDeployment();
+  const rewardsAddress = await rewards.getAddress();
     console.log("✅ Rewards contract deployed to:", rewards.address);
     console.log("   Gas used:", rewardsReceipt.gasUsed.toString());
     console.log("   Transaction hash:", rewardsReceipt.transactionHash);
