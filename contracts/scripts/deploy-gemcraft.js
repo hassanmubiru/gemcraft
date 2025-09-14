@@ -64,22 +64,17 @@ async function main() {
   console.log("\n💎 Deploying NFTGem contract...");
   const NFTGem = await ethers.getContractFactory("NFTGem");
   const baseURI = "https://api.gemcraft.celo.org/metadata/";
-  const nftGemDeployTx = await NFTGem.deploy(baseURI, {
+  const nftGem = await NFTGem.deploy(baseURI, {
     gasPrice: gasPriceWithBuffer
   });
-  const nftGemReceipt = await nftGemDeployTx.deployTransaction.wait();
-    
-    const nftGem = await NFTGem.attach(nftGemDeployTx.address);
-    console.log("✅ NFTGem contract deployed to:", nftGem.address);
-    console.log("   Gas used:", nftGemReceipt.gasUsed.toString());
-    console.log("   Transaction hash:", nftGemReceipt.transactionHash);
+  await nftGem.waitForDeployment();
+  const nftGemAddress = await nftGem.getAddress();
+  console.log("✅ NFTGem contract deployed to:", nftGemAddress);
 
-    deploymentInfo.contracts.nftGem = {
-      address: nftGem.address,
-      baseURI: baseURI,
-      gasUsed: nftGemReceipt.gasUsed.toString(),
-      transactionHash: nftGemReceipt.transactionHash,
-    };
+  deploymentInfo.contracts.nftGem = {
+    address: nftGemAddress,
+    baseURI: baseURI,
+  };
 
     // 3. Deploy Leaderboard Contract (if exists)
     try {
