@@ -1,0 +1,25 @@
+{
+  "network": "alfajores",
+  "deployer": "0x50625608E728cad827066dD78F5B4e8d203619F3",
+  "deployerBalance": "4.1556520538338",
+  "contracts": {
+    "rewards": {
+      "address": "0xd5ea8671F16BFB23044c54ed65eE3A7ab63BF58F",
+      "cUSD": "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1",
+      "CELO": "0x0000000000000000000000000000000000000000"
+    },
+    "nftGem": {
+      "address": "0x43161EAAC8726443B5AE5Cd7219cDeF8e43612Fe",
+      "baseURI": "https://api.gemcraft.celo.org/metadata/"
+    },
+    "leaderboard": {
+      "address": "0x254e926B7AEFC03f8519800f25C44E96617475dC"
+    }
+  },
+  "timestamp": "2025-09-14T20:11:52.660Z",
+  "blockNumber": 0,
+  "gasUsed": {},
+  "transactionHashes": {},
+  "error": "error_forwarding_sequencer: gas-price is less than the base-fee-floor",
+  "stack": "ProviderError: error_forwarding_sequencer: gas-price is less than the base-fee-floor\n    at HttpProvider.request (/home/error51/Project/Celo/gemcraft/contracts/node_modules/hardhat/src/internal/core/providers/http.ts:116:21)\n    at processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at HardhatEthersSigner.sendTransaction (/home/error51/Project/Celo/gemcraft/contracts/node_modules/@nomicfoundation/hardhat-ethers/src/signers.ts:181:18)\n    at send (/home/error51/Project/Celo/gemcraft/contracts/node_modules/ethers/src.ts/contract/contract.ts:313:20)\n    at Proxy.updateRewardAmount (/home/error51/Project/Celo/gemcraft/contracts/node_modules/ethers/src.ts/contract/contract.ts:352:16)\n    at main (/home/error51/Project/Celo/gemcraft/contracts/scripts/deploy-gemcraft.js:132:5)"
+}
