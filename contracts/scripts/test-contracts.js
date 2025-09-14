@@ -235,12 +235,18 @@ async function main() {
     // Test minting a new NFT
     try {
       console.log("   Testing NFT minting...");
+      const gasPrice = await ethers.provider.getFeeData();
+      const gasPriceWithBuffer = gasPrice.gasPrice * 200n / 100n; // 100% buffer
+      
       const mintTx = await nftGem.mintGem(
         testUser.address,
         0, // Ruby
         1, // Rare
         1, // RowClear
-        5  // Level 5
+        5, // Level 5
+        {
+          gasPrice: gasPriceWithBuffer
+        }
       );
       const mintReceipt = await mintTx.wait();
       
@@ -259,6 +265,10 @@ async function main() {
     }
 
     // Save test results
+    const deploymentPath = path.join(__dirname, "../deployments");
+    if (!fs.existsSync(deploymentPath)) {
+      fs.mkdirSync(deploymentPath, { recursive: true });
+    }
     const testFileName = `test-results-${Date.now()}.json`;
     const testFilePath = path.join(deploymentPath, testFileName);
     fs.writeFileSync(testFilePath, JSON.stringify(testResults, null, 2));
