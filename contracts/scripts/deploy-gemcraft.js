@@ -1,66 +1,261 @@
+// Enhanced GemCraft deployment script for Celo Alfajores
 const { ethers } = require("hardhat");
+const fs = require("fs");
+const path = require("path");
 
 async function main() {
-  console.log("🚀 Deploying GemCraft Rewards Contract...");
+  console.log("🚀 Starting GemCraft deployment to Celo Alfajores...\n");
 
-  // Get the contract factory
-  const GemCraftRewards = await ethers.getContractFactory("GemCraftRewards");
+  // Get the deployer account
+  const [deployer] = await ethers.getSigners();
+  console.log("📝 Deploying contracts with account:", deployer.address);
+  
+  const balance = await deployer.getBalance();
+  console.log("💰 Account balance:", ethers.utils.formatEther(balance), "CELO");
+  
+  if (balance.lt(ethers.utils.parseEther("0.1"))) {
+    console.log("⚠️  Warning: Low balance! Consider getting test CELO from faucet:");
+    console.log("   https://faucet.celo.org/");
+  }
 
-  // cUSD token address on Alfajores testnet
-  const cUSDAddress = "0x874069Fa1Eb16D44d62F6aDD3B9835bdf8af4b4";
+  // Celo Alfajores testnet token addresses (verified)
+  const CUSD_ADDRESS = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1";
+  const CELO_ADDRESS = "0xF194afDf50B03a69Ea33B7c6CF6a2A4E7B3F8C2D";
 
-  // Deploy the contract
-  console.log("📦 Deploying contract...");
-  const gemCraftRewards = await GemCraftRewards.deploy(cUSDAddress);
+  console.log("\n📋 Using token addresses:");
+  console.log("   cUSD:", CUSD_ADDRESS);
+  console.log("   CELO:", CELO_ADDRESS);
 
-  await gemCraftRewards.deployed();
-
-  console.log("✅ GemCraft Rewards Contract deployed to:", gemCraftRewards.address);
-  console.log("🔗 Contract on Alfajores Explorer:", `https://alfajores-blockscout.celo-testnet.org/address/${gemCraftRewards.address}`);
-
-  // Verify contract deployment
-  console.log("🔍 Verifying deployment...");
-  const contractBalance = await gemCraftRewards.getContractBalance();
-  console.log("💰 Contract cUSD balance:", ethers.utils.formatEther(contractBalance));
-
-  // Get level 1 rewards as example
-  const level1Rewards = await gemCraftRewards.levelRewards(1);
-  console.log("🎮 Level 1 rewards:", {
-    cUSD: ethers.utils.formatEther(level1Rewards.cUSDReward),
-    gems: level1Rewards.gemReward.toString(),
-    nftChance: level1Rewards.nftChance.toString() + "%",
-    active: level1Rewards.isActive
-  });
-
-  // Save deployment info
-  const deploymentInfo = {
+  let deploymentInfo = {
     network: "alfajores",
-    contractAddress: gemCraftRewards.address,
-    cUSDAddress: cUSDAddress,
-    deployer: await gemCraftRewards.owner(),
-    deploymentTime: new Date().toISOString(),
-    transactionHash: gemCraftRewards.deployTransaction.hash
+    deployer: deployer.address,
+    deployerBalance: ethers.utils.formatEther(balance),
+    contracts: {},
+    timestamp: new Date().toISOString(),
+    blockNumber: 0,
+    gasUsed: {},
+    transactionHashes: {},
   };
 
-  console.log("📄 Deployment Info:", JSON.stringify(deploymentInfo, null, 2));
+  try {
+    // 1. Deploy Rewards Contract
+    console.log("\n🎯 Deploying Rewards contract...");
+    const Rewards = await ethers.getContractFactory("Rewards");
+    const rewardsDeployTx = await Rewards.deploy(CUSD_ADDRESS, CELO_ADDRESS);
+    const rewardsReceipt = await rewardsDeployTx.deployTransaction.wait();
+    
+    const rewards = await Rewards.attach(rewardsDeployTx.address);
+    console.log("✅ Rewards contract deployed to:", rewards.address);
+    console.log("   Gas used:", rewardsReceipt.gasUsed.toString());
+    console.log("   Transaction hash:", rewardsReceipt.transactionHash);
 
-  // Instructions for next steps
-  console.log("\n🎯 Next Steps:");
-  console.log("1. Fund the contract with cUSD tokens for rewards");
-  console.log("2. Update the frontend with the contract address");
-  console.log("3. Test level completion and reward claiming");
-  console.log("4. Monitor contract events and transactions");
+    deploymentInfo.contracts.rewards = {
+      address: rewards.address,
+      cUSD: CUSD_ADDRESS,
+      CELO: CELO_ADDRESS,
+      gasUsed: rewardsReceipt.gasUsed.toString(),
+      transactionHash: rewardsReceipt.transactionHash,
+    };
 
-  return deploymentInfo;
+    // 2. Deploy NFTGem Contract
+    console.log("\n💎 Deploying NFTGem contract...");
+    const NFTGem = await ethers.getContractFactory("NFTGem");
+    const baseURI = "https://api.gemcraft.celo.org/metadata/";
+    const nftGemDeployTx = await NFTGem.deploy(baseURI);
+    const nftGemReceipt = await nftGemDeployTx.deployTransaction.wait();
+    
+    const nftGem = await NFTGem.attach(nftGemDeployTx.address);
+    console.log("✅ NFTGem contract deployed to:", nftGem.address);
+    console.log("   Gas used:", nftGemReceipt.gasUsed.toString());
+    console.log("   Transaction hash:", nftGemReceipt.transactionHash);
+
+    deploymentInfo.contracts.nftGem = {
+      address: nftGem.address,
+      baseURI: baseURI,
+      gasUsed: nftGemReceipt.gasUsed.toString(),
+      transactionHash: nftGemReceipt.transactionHash,
+    };
+
+    // 3. Deploy Leaderboard Contract (if exists)
+    try {
+      console.log("\n🏆 Deploying Leaderboard contract...");
+      const Leaderboard = await ethers.getContractFactory("Leaderboard");
+      const leaderboardDeployTx = await Leaderboard.deploy();
+      const leaderboardReceipt = await leaderboardDeployTx.deployTransaction.wait();
+      
+      const leaderboard = await Leaderboard.attach(leaderboardDeployTx.address);
+      console.log("✅ Leaderboard contract deployed to:", leaderboard.address);
+      console.log("   Gas used:", leaderboardReceipt.gasUsed.toString());
+      console.log("   Transaction hash:", leaderboardReceipt.transactionHash);
+
+      deploymentInfo.contracts.leaderboard = {
+        address: leaderboard.address,
+        gasUsed: leaderboardReceipt.gasUsed.toString(),
+        transactionHash: leaderboardReceipt.transactionHash,
+      };
+    } catch (error) {
+      console.log("⚠️  Leaderboard contract not found, skipping...");
+    }
+
+    // 4. Initialize contracts with initial funding
+    console.log("\n💰 Initializing contracts...");
+    
+    // Fund Rewards contract with test cUSD (if we have some)
+    try {
+      const cUSD = await ethers.getContractAt("IERC20", CUSD_ADDRESS);
+      const cUSDBalance = await cUSD.balanceOf(deployer.address);
+      
+      if (cUSDBalance.gt(0)) {
+        const fundingAmount = cUSDBalance.div(2); // Use half of available cUSD
+        console.log(`   Funding Rewards contract with ${ethers.utils.formatEther(fundingAmount)} cUSD...`);
+        
+        const fundTx = await cUSD.transfer(rewards.address, fundingAmount);
+        await fundTx.wait();
+        console.log("✅ Rewards contract funded successfully");
+      } else {
+        console.log("⚠️  No cUSD balance to fund contracts. Get test tokens from faucet:");
+        console.log("   https://faucet.celo.org/");
+      }
+    } catch (error) {
+      console.log("⚠️  Could not fund contracts:", error.message);
+    }
+
+    // 5. Set up contract permissions and initial configuration
+    console.log("\n⚙️  Configuring contracts...");
+    
+    // Update reward amounts for the 100-level system
+    const rewardAmounts = {
+      dailyBonus: ethers.utils.parseEther("0.1"), // 0.1 cUSD
+      levelComplete: ethers.utils.parseEther("0.5"), // 0.5 cUSD
+      achievement: ethers.utils.parseEther("2.0"), // 2 cUSD
+      comboBonus: ethers.utils.parseEther("0.1"), // 0.1 cUSD
+    };
+
+    console.log("   Setting reward amounts...");
+    await rewards.updateRewardAmount("daily_bonus", rewardAmounts.dailyBonus);
+    await rewards.updateRewardAmount("level_complete", rewardAmounts.levelComplete);
+    await rewards.updateRewardAmount("achievement", rewardAmounts.achievement);
+    await rewards.updateRewardAmount("combo_bonus", rewardAmounts.comboBonus);
+    console.log("✅ Reward amounts configured");
+
+    // 6. Mint initial test NFTs
+    console.log("\n🎨 Minting initial test NFTs...");
+    try {
+      // Mint a few test gems for the deployer
+      const testGems = [
+        { type: 0, rarity: 0, power: 0, level: 1 }, // Common Ruby
+        { type: 1, rarity: 1, power: 1, level: 5 }, // Rare Sapphire
+        { type: 2, rarity: 2, power: 2, level: 10 }, // Epic Emerald
+      ];
+
+      for (const gem of testGems) {
+        const mintTx = await nftGem.mintGem(
+          deployer.address,
+          gem.type,
+          gem.rarity,
+          gem.power,
+          gem.level
+        );
+        await mintTx.wait();
+      }
+      console.log("✅ Test NFTs minted successfully");
+    } catch (error) {
+      console.log("⚠️  Could not mint test NFTs:", error.message);
+    }
+
+    // 7. Get final block number
+    deploymentInfo.blockNumber = await ethers.provider.getBlockNumber();
+
+    // 8. Save deployment info
+    const deploymentPath = path.join(__dirname, "../deployments");
+    if (!fs.existsSync(deploymentPath)) {
+      fs.mkdirSync(deploymentPath, { recursive: true });
+    }
+
+    const fileName = `gemcraft-alfajores-${Date.now()}.json`;
+    const filePath = path.join(deploymentPath, fileName);
+    fs.writeFileSync(filePath, JSON.stringify(deploymentInfo, null, 2));
+
+    // 9. Display deployment summary
+    console.log("\n" + "=".repeat(60));
+    console.log("🎉 GEMCRAFT DEPLOYMENT COMPLETE!");
+    console.log("=".repeat(60));
+    console.log("📊 Deployment Summary:");
+    console.log("   Network: Celo Alfajores Testnet");
+    console.log("   Deployer:", deployer.address);
+    console.log("   Block Number:", deploymentInfo.blockNumber);
+    console.log("   Timestamp:", deploymentInfo.timestamp);
+    
+    console.log("\n📋 Contract Addresses:");
+    console.log("   Rewards:", deploymentInfo.contracts.rewards.address);
+    console.log("   NFTGem:", deploymentInfo.contracts.nftGem.address);
+    if (deploymentInfo.contracts.leaderboard) {
+      console.log("   Leaderboard:", deploymentInfo.contracts.leaderboard.address);
+    }
+
+    console.log("\n🔗 Explorer Links:");
+    console.log("   Rewards:", `https://alfajores-blockscout.celo-testnet.org/address/${deploymentInfo.contracts.rewards.address}`);
+    console.log("   NFTGem:", `https://alfajores-blockscout.celo-testnet.org/address/${deploymentInfo.contracts.nftGem.address}`);
+    if (deploymentInfo.contracts.leaderboard) {
+      console.log("   Leaderboard:", `https://alfajores-blockscout.celo-testnet.org/address/${deploymentInfo.contracts.leaderboard.address}`);
+    }
+
+    console.log("\n📝 Next Steps:");
+    console.log("1. Update your .env file with contract addresses:");
+    console.log(`   REWARDS_CONTRACT_ADDRESS=${deploymentInfo.contracts.rewards.address}`);
+    console.log(`   NFT_GEM_CONTRACT_ADDRESS=${deploymentInfo.contracts.nftGem.address}`);
+    if (deploymentInfo.contracts.leaderboard) {
+      console.log(`   LEADERBOARD_CONTRACT_ADDRESS=${deploymentInfo.contracts.leaderboard.address}`);
+    }
+
+    console.log("\n2. Fund contracts with test tokens:");
+    console.log(`   - Send test cUSD to Rewards: ${deploymentInfo.contracts.rewards.address}`);
+    console.log("   - Use Alfajores faucet: https://faucet.celo.org/");
+
+    console.log("\n3. Verify contracts on Celo Explorer:");
+    console.log(`   npx hardhat verify --network alfajores ${deploymentInfo.contracts.rewards.address} "${CUSD_ADDRESS}" "${CELO_ADDRESS}"`);
+    console.log(`   npx hardhat verify --network alfajores ${deploymentInfo.contracts.nftGem.address} "${baseURI}"`);
+    if (deploymentInfo.contracts.leaderboard) {
+      console.log(`   npx hardhat verify --network alfajores ${deploymentInfo.contracts.leaderboard.address}`);
+    }
+
+    console.log("\n4. Test the contracts:");
+    console.log("   - Try claiming daily bonus");
+    console.log("   - Mint test NFTs");
+    console.log("   - Check balances and transactions");
+
+    console.log(`\n💾 Deployment info saved to: ${filePath}`);
+    console.log("\n🎮 Ready to play GemCraft on Celo!");
+
+    return deploymentInfo;
+
+  } catch (error) {
+    console.error("\n❌ Deployment failed:", error);
+    
+    // Save error info
+    const errorInfo = {
+      ...deploymentInfo,
+      error: error.message,
+      stack: error.stack,
+    };
+    
+    const errorPath = path.join(__dirname, "../deployments");
+    if (!fs.existsSync(errorPath)) {
+      fs.mkdirSync(errorPath, { recursive: true });
+    }
+    
+    const errorFileName = `deployment-error-${Date.now()}.json`;
+    const errorFilePath = path.join(errorPath, errorFileName);
+    fs.writeFileSync(errorFilePath, JSON.stringify(errorInfo, null, 2));
+    
+    console.log(`💾 Error info saved to: ${errorFilePath}`);
+    throw error;
+  }
 }
 
-// Execute deployment
 main()
-  .then((deploymentInfo) => {
-    console.log("🎉 Deployment completed successfully!");
-    process.exit(0);
-  })
+  .then(() => process.exit(0))
   .catch((error) => {
-    console.error("❌ Deployment failed:", error);
+    console.error("💥 Deployment failed:", error);
     process.exit(1);
   });

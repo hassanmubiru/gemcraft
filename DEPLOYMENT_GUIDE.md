@@ -1,200 +1,348 @@
 # 🚀 GemCraft Smart Contract Deployment Guide
 
-## 📋 Prerequisites
+## 📋 Overview
+
+This guide will walk you through deploying the GemCraft smart contracts to Celo Alfajores testnet, including the Rewards contract, NFTGem contract, and Leaderboard contract.
+
+## 🔧 Prerequisites
 
 ### 1. Environment Setup
+- Node.js (v16 or higher)
+- npm or yarn
+- Git
+
+### 2. Celo Testnet Access
+- Celo Alfajores testnet RPC access
+- Test CELO tokens from the faucet
+- Test cUSD tokens from the faucet
+
+### 3. Required Tools
+- Hardhat
+- Celo ContractKit
+- Wallet with test tokens
+
+## 🛠️ Installation
+
+### 1. Install Dependencies
 ```bash
-# Install dependencies
 cd contracts
 npm install
-
-# Create environment file
-cp env.example .env
 ```
 
-### 2. Configure Environment Variables
-Edit `.env` file with your test private key:
+### 2. Install Hardhat
 ```bash
-# Celo Alfajores Testnet Configuration
+npm install --save-dev hardhat
+npx hardhat init
+```
+
+### 3. Install Required Packages
+```bash
+npm install @openzeppelin/contracts
+npm install @nomicfoundation/hardhat-toolbox
+npm install hardhat-gas-reporter
+npm install solidity-coverage
+```
+
+## ⚙️ Configuration
+
+### 1. Environment Variables
+Create a `.env` file in the contracts directory:
+
+```env
+# Celo Alfajores Testnet
+PRIVATE_KEY=your_private_key_here
 ALFAJORES_RPC_URL=https://alfajores-forno.celo-testnet.org
-ALFAJORES_CHAIN_ID=44787
-ALFAJORES_EXPLORER_URL=https://explorer.celo.org/alfajores
 
-# Private Key for deployment (TEST ONLY - NEVER USE PRODUCTION KEYS)
-PRIVATE_KEY=your_test_private_key_here
+# Contract Addresses (will be filled after deployment)
+REWARDS_CONTRACT_ADDRESS=
+NFT_GEM_CONTRACT_ADDRESS=
+LEADERBOARD_CONTRACT_ADDRESS=
 
-# Test Token Addresses (Alfajores)
-TEST_CUSD_ADDRESS=0x874069Fa1Eb16D44d62F6aDD3B9835bdf8af4b4
-TEST_CELO_ADDRESS=0xF194afDf50B03a69Ea33B7c6CF6a2A4E7B3F8C2D
-
-# Gas Configuration
-GAS_LIMIT=8000000
-GAS_PRICE=20000000000
+# Celo Token Addresses (Alfajores)
+CUSD_ADDRESS=0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1
+CELO_ADDRESS=0xF194afDf50B03a69Ea33B7c6CF6a2A4E7B3F8C2D
 ```
 
-### 3. Get Test Tokens
-1. Visit [Celo Faucet](https://faucet.celo.org/)
-2. Connect your wallet
-3. Request test cUSD tokens
-4. Ensure you have at least 1 cUSD for deployment gas
+### 2. Hardhat Configuration
+The `hardhat.config.js` file is already configured for Celo networks:
 
-## 🚀 Deployment Steps
-
-### Step 1: Compile Contracts
-```bash
-cd contracts
-npx hardhat compile
-```
-
-### Step 2: Deploy to Alfajores Testnet
-```bash
-# Deploy the main rewards contract
-npx hardhat run scripts/deploy-gemcraft.js --network alfajores
-```
-
-### Step 3: Fund the Contract
-After deployment, you need to fund the contract with cUSD tokens:
-```bash
-# Transfer cUSD to the deployed contract address
-# This can be done through the Celo wallet or programmatically
-```
-
-### Step 4: Update Frontend Configuration
-Update the contract address in the frontend:
-```typescript
-// src/utils/ContractInteraction.ts
-export const CONTRACT_ADDRESSES = {
-  alfajores: {
-    GemCraftRewards: '0x...', // Your deployed contract address
-    cUSD: '0x874069Fa1Eb16D44d62F6aDD3B9835bdf8af4b4'
-  }
+```javascript
+module.exports = {
+  solidity: {
+    version: "0.8.19",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200,
+      },
+      viaIR: true,
+    },
+  },
+  networks: {
+    alfajores: {
+      url: "https://alfajores-forno.celo-testnet.org",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 44787,
+      gas: 8000000,
+      gasPrice: 20000000000,
+    },
+  },
 };
 ```
 
-### Step 5: Test the Integration
-1. Start the frontend: `npm start`
-2. Connect a Celo wallet
-3. Play a level and claim rewards
-4. Verify transactions on [Alfajores Explorer](https://alfajores-blockscout.celo-testnet.org/)
+## 🚀 Deployment Process
 
-## 🔧 Contract Details
+### Step 1: Get Test Tokens
 
-### GemCraftRewards Contract
-- **Purpose**: Handles level completion rewards and NFT minting
-- **Features**: 
-  - cUSD token rewards
-  - NFT minting with rarity system
-  - Performance-based multipliers
-  - Player statistics tracking
+1. **Get CELO from Faucet:**
+   - Visit: https://faucet.celo.org/
+   - Connect your wallet
+   - Request test CELO tokens
 
-### Contract Functions
-- `completeLevel(levelId, score, targetScore)`: Complete a level and claim rewards
-- `getPlayerStats(address)`: Get player statistics
-- `getPlayerNFTs(address)`: Get player's NFT collection
-- `getContractBalance()`: Check contract's cUSD balance
+2. **Get cUSD from Faucet:**
+   - Visit: https://faucet.celo.org/
+   - Request test cUSD tokens
 
-## 📊 Deployment Verification
+### Step 2: Deploy Contracts
 
-### 1. Contract Deployment
-- ✅ Contract deployed successfully
-- ✅ Contract address recorded
-- ✅ Constructor parameters set correctly
+Run the enhanced deployment script:
 
-### 2. Contract Funding
-- ✅ Contract funded with cUSD tokens
-- ✅ Sufficient balance for rewards
-- ✅ Owner permissions set
-
-### 3. Frontend Integration
-- ✅ Contract address updated
-- ✅ ABI imported correctly
-- ✅ Wallet connection working
-- ✅ Transaction signing working
-
-### 4. End-to-End Testing
-- ✅ Level completion working
-- ✅ Reward claiming working
-- ✅ NFT minting working
-- ✅ Transaction confirmation working
-
-## 🎯 Expected Results
-
-### Successful Deployment
-```
-🚀 Deploying GemCraft Rewards Contract...
-📦 Deploying contract...
-⏳ Waiting for deployment...
-✅ GemCraft Rewards Contract deployed to: 0x...
-🔗 Contract on Alfajores Explorer: https://alfajores-blockscout.celo-testnet.org/address/0x...
-💰 Contract cUSD balance: 0.0
-🎮 Level 1 rewards: { cUSD: '0.1', gems: '10', nftChance: '1%', active: true }
-🎉 Deployment completed successfully!
+```bash
+npx hardhat run scripts/deploy-gemcraft.js --network alfajores
 ```
 
-### Contract Interaction
-- Players can complete levels and claim cUSD rewards
-- NFT minting occurs based on level chance percentages
-- Performance multipliers apply based on score vs target
-- All transactions are recorded on the blockchain
+This script will:
+- Deploy the Rewards contract
+- Deploy the NFTGem contract
+- Deploy the Leaderboard contract (if available)
+- Initialize contracts with proper configuration
+- Fund contracts with test tokens
+- Mint initial test NFTs
+- Save deployment information
+
+### Step 3: Verify Contracts
+
+Run the verification script:
+
+```bash
+npx hardhat run scripts/verify-contracts.js --network alfajores
+```
+
+This will verify all contracts on Celo Explorer.
+
+### Step 4: Test Contracts
+
+Run the testing script:
+
+```bash
+npx hardhat run scripts/test-contracts.js --network alfajores
+```
+
+This will test all contract functions and interactions.
+
+## 📊 Contract Details
+
+### Rewards Contract
+- **Purpose**: Manages token rewards for game achievements
+- **Features**:
+  - Daily bonus rewards
+  - Level completion rewards
+  - Achievement rewards
+  - Combo bonus rewards
+  - Batch reward claiming
+  - Signature verification
+
+### NFTGem Contract
+- **Purpose**: ERC-721 NFTs for rare gems and power-ups
+- **Features**:
+  - Multiple gem types (Ruby, Sapphire, Emerald, Diamond, etc.)
+  - Rarity system (Common, Rare, Epic, Legendary)
+  - Power system (Normal, RowClear, ColumnClear, Explosive, ColorBomb)
+  - Batch minting
+  - Player token tracking
+  - Metadata URI generation
+
+### Leaderboard Contract
+- **Purpose**: Global leaderboard for player rankings
+- **Features**:
+  - Score tracking
+  - Level completion tracking
+  - Player rankings
+  - Reward distribution
+
+## 🔗 Contract Addresses
+
+After deployment, you'll receive contract addresses like:
+
+```
+Rewards Contract: 0x1234567890abcdef...
+NFTGem Contract: 0xabcdef1234567890...
+Leaderboard Contract: 0x9876543210fedcba...
+```
+
+## 📝 Post-Deployment Steps
+
+### 1. Update Environment Variables
+Update your `.env` file with the deployed contract addresses:
+
+```env
+REWARDS_CONTRACT_ADDRESS=0x1234567890abcdef...
+NFT_GEM_CONTRACT_ADDRESS=0xabcdef1234567890...
+LEADERBOARD_CONTRACT_ADDRESS=0x9876543210fedcba...
+```
+
+### 2. Update Frontend Configuration
+Update your frontend configuration files with the new contract addresses.
+
+### 3. Fund Contracts
+Ensure contracts have sufficient test tokens for rewards:
+- Send test cUSD to the Rewards contract
+- Verify balances on Celo Explorer
+
+### 4. Test Integration
+- Test wallet connection
+- Test reward claiming
+- Test NFT minting
+- Test game integration
+
+## 🔍 Verification Commands
+
+### Manual Verification
+If automatic verification fails, use these commands:
+
+```bash
+# Verify Rewards contract
+npx hardhat verify --network alfajores <REWARDS_ADDRESS> "<CUSD_ADDRESS>" "<CELO_ADDRESS>"
+
+# Verify NFTGem contract
+npx hardhat verify --network alfajores <NFTGEM_ADDRESS> "<BASE_URI>"
+
+# Verify Leaderboard contract
+npx hardhat verify --network alfajores <LEADERBOARD_ADDRESS>
+```
+
+## 🧪 Testing
+
+### Test Functions
+The contracts include comprehensive test functions:
+
+1. **Rewards Contract Tests:**
+   - Daily bonus claiming
+   - Level completion rewards
+   - Achievement rewards
+   - Combo bonuses
+   - Batch claiming
+
+2. **NFTGem Contract Tests:**
+   - NFT minting
+   - Batch minting
+   - Token transfers
+   - Metadata generation
+   - Player token tracking
+
+3. **Integration Tests:**
+   - Contract interactions
+   - Gas optimization
+   - Error handling
+
+### Run Tests
+```bash
+npx hardhat test
+```
+
+## 📈 Monitoring
+
+### Celo Explorer
+Monitor your contracts on Celo Explorer:
+- https://alfajores-blockscout.celo-testnet.org/
+
+### Contract Events
+Monitor important events:
+- `RewardClaimed`: When players claim rewards
+- `GemMinted`: When NFTs are minted
+- `LeaderboardUpdated`: When scores are updated
 
 ## 🚨 Troubleshooting
 
 ### Common Issues
 
-#### 1. Deployment Fails
-- **Cause**: Insufficient gas or network issues
-- **Solution**: Increase gas limit or check network connection
+1. **Insufficient Gas:**
+   - Increase gas limit in hardhat.config.js
+   - Check gas prices on Celo
 
-#### 2. Contract Not Funded
-- **Cause**: No cUSD tokens in contract
-- **Solution**: Transfer cUSD tokens to contract address
+2. **Verification Failed:**
+   - Ensure constructor arguments are correct
+   - Check contract source code matches
 
-#### 3. Frontend Can't Connect
-- **Cause**: Wrong contract address or ABI
-- **Solution**: Verify contract address and ABI in frontend
+3. **Transaction Failed:**
+   - Check account balance
+   - Verify network connection
+   - Check contract state
 
-#### 4. Transactions Fail
-- **Cause**: Insufficient gas or contract not funded
-- **Solution**: Check gas settings and contract balance
+### Error Messages
 
-### Debug Commands
-```bash
-# Check contract balance
-npx hardhat run scripts/check-balance.js --network alfajores
+- `"Daily bonus already claimed"`: Player already claimed today's bonus
+- `"Reward already claimed"`: This specific reward was already claimed
+- `"Max supply reached"`: NFT contract has reached maximum supply
+- `"Invalid signature"`: Signature verification failed
 
-# Verify contract deployment
-npx hardhat verify --network alfajores <CONTRACT_ADDRESS>
+## 🔐 Security Considerations
 
-# Test contract functions
-npx hardhat run scripts/test-contract.js --network alfajores
-```
+### Production Deployment
+Before mainnet deployment:
 
-## 📈 Post-Deployment
+1. **Audit Contracts:**
+   - Professional security audit
+   - Code review
+   - Penetration testing
 
-### 1. Monitor Contract
-- Track contract balance
-- Monitor reward distributions
-- Watch for NFT mints
+2. **Implement Proper Signatures:**
+   - Replace demo signature verification
+   - Use proper cryptographic signatures
+   - Implement server-side verification
 
-### 2. User Testing
-- Test with multiple wallets
-- Verify reward calculations
-- Test NFT minting rates
+3. **Access Control:**
+   - Implement proper role-based access
+   - Use multi-signature wallets
+   - Implement emergency pause functions
 
-### 3. Performance Optimization
-- Monitor gas usage
-- Optimize contract functions
-- Update reward rates if needed
+4. **Rate Limiting:**
+   - Implement rate limiting for claims
+   - Prevent spam attacks
+   - Monitor unusual activity
 
-## 🎉 Success Criteria
+## 📚 Additional Resources
 
-- ✅ Contract deployed to Alfajores testnet
-- ✅ Contract funded with cUSD tokens
-- ✅ Frontend connected to real contract
-- ✅ Players can claim real cUSD rewards
-- ✅ NFT minting working with real transactions
-- ✅ All transactions visible on blockchain explorer
+- [Celo Documentation](https://docs.celo.org/)
+- [Hardhat Documentation](https://hardhat.org/docs)
+- [OpenZeppelin Contracts](https://docs.openzeppelin.com/contracts/)
+- [Celo Explorer](https://explorer.celo.org/)
+- [Alfajores Faucet](https://faucet.celo.org/)
+
+## 🎮 Next Steps
+
+After successful deployment:
+
+1. **Integrate with Frontend:**
+   - Update contract addresses
+   - Test wallet integration
+   - Test reward claiming
+
+2. **Game Integration:**
+   - Connect game engine to contracts
+   - Test level completion rewards
+   - Test NFT minting
+
+3. **User Testing:**
+   - Deploy to staging environment
+   - Conduct user testing
+   - Gather feedback
+
+4. **Mainnet Preparation:**
+   - Security audit
+   - Load testing
+   - Documentation review
 
 ---
 
-**Status**: Ready for deployment when environment is properly configured!
+**🎉 Congratulations!** Your GemCraft contracts are now deployed on Celo Alfajores testnet and ready for testing!
