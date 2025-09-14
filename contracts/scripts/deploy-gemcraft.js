@@ -45,7 +45,7 @@ async function main() {
   
   // Get current gas price and add some buffer
   const gasPrice = await ethers.provider.getFeeData();
-  const gasPriceWithBuffer = gasPrice.gasPrice * 120n / 100n; // 20% buffer
+  const gasPriceWithBuffer = gasPrice.gasPrice * 150n / 100n; // 50% buffer for Celo
   
   const rewards = await Rewards.deploy(CUSD_ADDRESS, CELO_ADDRESS, {
     gasPrice: gasPriceWithBuffer
