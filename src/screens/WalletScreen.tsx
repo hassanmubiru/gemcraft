@@ -1,233 +1,368 @@
+// Comprehensive Wallet Screen for GemCraft
 import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   ScrollView,
+  Dimensions,
+  StatusBar,
   Alert,
   RefreshControl,
 } from 'react-native';
-import { useWallet } from '../utils/WalletContext';
-import { useGame } from '../game/GameContext';
+import { useWallet } from '../contexts/WalletContext';
+import WalletConnect from '../components/WalletConnect';
+import { celoGameUtils, GameTransaction } from '../utils/CeloGameUtils';
+import { CELO_NETWORKS } from '../utils/CeloWallet';
 
-export default function WalletScreen() {
-  const { connection, isConnecting, error, connectWallet, disconnectWallet, getBalance } = useWallet();
-  const { gameState } = useGame();
-  const [refreshing, setRefreshing] = useState(false);
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    if (connection) {
-      await getBalance();
+interface WalletScreenProps {
+  navigation: any;
+}
+
+const WalletScreen: React.FC<WalletScreenProps> = ({ navigation }) => {
+  const { walletState, updateBalance } = useWallet();
+  const [transactions, setTransactions] = useState<GameTransaction[]>([]);
+  const [playerStats, setPlayerStats] = useState({
+    levelsCompleted: 0,
+    totalScore: 0,
+    nftsOwned: 0,
+    totalRewards: 0,
+    rank: 0,
+  });
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'leaderboard'>('overview');
+
+  useEffect(() => {
+    if (walletState.isConnected && walletState.address) {
+      loadWalletData();
     }
-    setRefreshing(false);
-  };
+  }, [walletState.isConnected, walletState.address]);
 
-  const handleConnect = async () => {
+  const loadWalletData = async () => {
+    if (!walletState.address) return;
+
     try {
-      await connectWallet();
-    } catch (err) {
-      Alert.alert('Connection Error', 'Failed to connect wallet. Please try again.');
+      // Load transactions
+      const txHistory = await celoGameUtils.getTransactionHistory(walletState.address);
+      setTransactions(txHistory);
+
+      // Load player stats
+      const stats = await celoGameUtils.getPlayerStats(walletState.address);
+      setPlayerStats(stats);
+
+      // Load leaderboard
+      const leaderboardData = await celoGameUtils.getLeaderboard(50);
+      setLeaderboard(leaderboardData);
+    } catch (error) {
+      console.error('Failed to load wallet data:', error);
     }
   };
 
-  const handleDisconnect = () => {
-    Alert.alert(
-      'Disconnect Wallet',
-      'Are you sure you want to disconnect your wallet?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Disconnect', style: 'destructive', onPress: disconnectWallet },
-      ]
-    );
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await updateBalance();
+      await loadWalletData();
+    } catch (error) {
+      console.error('Failed to refresh wallet data:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
-  const handleClaimReward = () => {
-    Alert.alert(
-      'Claim Rewards',
-      'This feature will be available after connecting to the blockchain.',
-      [{ text: 'OK' }]
-    );
+  const formatAddress = (address: string): string => {
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  const handleViewNFTs = () => {
-    Alert.alert(
-      'NFT Collection',
-      'Your NFT gems will appear here after earning them in-game.',
-      [{ text: 'OK' }]
-    );
+  const formatBalance = (balance: string): string => {
+    const num = parseFloat(balance);
+    if (num === 0) return '0';
+    if (num < 0.001) return '< 0.001';
+    return num.toFixed(3);
   };
 
-  if (!connection) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Wallet</Text>
-          <Text style={styles.subtitle}>Connect your wallet to earn rewards</Text>
-        </View>
+  const formatTransactionType = (type: string): string => {
+    switch (type) {
+      case 'reward': return '💰 Reward';
+      case 'nft_mint': return '🎨 NFT Mint';
+      case 'level_complete': return '✅ Level Complete';
+      case 'daily_bonus': return '🎁 Daily Bonus';
+      default: return '📄 Transaction';
+    }
+  };
 
-        <View style={styles.content}>
-          <View style={styles.walletCard}>
-            <Text style={styles.walletIcon}>💰</Text>
-            <Text style={styles.walletTitle}>No Wallet Connected</Text>
-            <Text style={styles.walletDescription}>
-              Connect your wallet to start earning CELO and cUSD rewards for playing GemCraft!
-            </Text>
-            
-            <TouchableOpacity
-              style={[styles.connectButton, isConnecting && styles.disabledButton]}
-              onPress={handleConnect}
-              disabled={isConnecting}
-            >
-              <Text style={styles.connectButtonText}>
-                {isConnecting ? 'Connecting...' : 'Connect Wallet'}
-              </Text>
-            </TouchableOpacity>
+  const formatTimestamp = (timestamp: number): string => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
 
-            {error && (
-              <Text style={styles.errorText}>{error}</Text>
-            )}
-          </View>
+    if (diffHours < 1) return 'Just now';
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
+  };
 
-          <View style={styles.featuresCard}>
-            <Text style={styles.featuresTitle}>Blockchain Features</Text>
-            <View style={styles.featureList}>
-              <View style={styles.featureItem}>
-                <Text style={styles.featureIcon}>🎯</Text>
-                <Text style={styles.featureText}>Earn tokens for completing levels</Text>
-              </View>
-              <View style={styles.featureItem}>
-                <Text style={styles.featureIcon}>🏆</Text>
-                <Text style={styles.featureText}>Collect rare NFT gems</Text>
-              </View>
-              <View style={styles.featureItem}>
-                <Text style={styles.featureIcon}>📊</Text>
-                <Text style={styles.featureText}>Compete on global leaderboards</Text>
-              </View>
-              <View style={styles.featureItem}>
-                <Text style={styles.featureIcon}>🎁</Text>
-                <Text style={styles.featureText}>Daily bonus rewards</Text>
-              </View>
+  const copyToClipboard = (text: string) => {
+    // In a real implementation, this would copy to clipboard
+    Alert.alert('Copied!', `${text} copied to clipboard`);
+  };
+
+  const openExplorer = (hash: string) => {
+    const network = walletState.network || 'alfajores';
+    const explorerUrl = `${CELO_NETWORKS[network].blockExplorerUrl}/tx/${hash}`;
+    // In a real implementation, this would open the URL
+    Alert.alert('Explorer', `View transaction: ${explorerUrl}`);
+  };
+
+  const renderOverview = () => (
+    <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
+      {/* Wallet Status */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Wallet Status</Text>
+        <View style={styles.statusCard}>
+          <View style={styles.statusRow}>
+            <Text style={styles.statusLabel}>Network:</Text>
+            <View style={[styles.networkBadge, { backgroundColor: walletState.network === 'alfajores' ? '#F39C12' : '#2ECC71' }]}>
+              <Text style={styles.networkText}>{walletState.network?.toUpperCase()}</Text>
             </View>
           </View>
+          <View style={styles.statusRow}>
+            <Text style={styles.statusLabel}>Address:</Text>
+            <TouchableOpacity onPress={() => copyToClipboard(walletState.address || '')}>
+              <Text style={styles.addressText}>{formatAddress(walletState.address || '')}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </SafeAreaView>
-    );
-  }
+      </View>
+
+      {/* Balances */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Balances</Text>
+        <View style={styles.balanceGrid}>
+          <View style={styles.balanceCard}>
+            <Text style={styles.balanceIcon}>🟡</Text>
+            <Text style={styles.balanceLabel}>CELO</Text>
+            <Text style={styles.balanceValue}>{formatBalance(walletState.balance.CELO)}</Text>
+          </View>
+          <View style={styles.balanceCard}>
+            <Text style={styles.balanceIcon}>💵</Text>
+            <Text style={styles.balanceLabel}>cUSD</Text>
+            <Text style={styles.balanceValue}>{formatBalance(walletState.balance.cUSD)}</Text>
+          </View>
+          <View style={styles.balanceCard}>
+            <Text style={styles.balanceIcon}>💶</Text>
+            <Text style={styles.balanceLabel}>cEUR</Text>
+            <Text style={styles.balanceValue}>{formatBalance(walletState.balance.cEUR)}</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Player Stats */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Game Statistics</Text>
+        <View style={styles.statsGrid}>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{playerStats.levelsCompleted}</Text>
+            <Text style={styles.statLabel}>Levels Completed</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{playerStats.totalScore.toLocaleString()}</Text>
+            <Text style={styles.statLabel}>Total Score</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{playerStats.nftsOwned}</Text>
+            <Text style={styles.statLabel}>NFTs Owned</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{playerStats.totalRewards}</Text>
+            <Text style={styles.statLabel}>Total Rewards (cUSD)</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Quick Actions */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <View style={styles.actionGrid}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => navigation.navigate('LevelSelect')}>
+            <Text style={styles.actionIcon}>🎮</Text>
+            <Text style={styles.actionLabel}>Play Game</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionCard} onPress={() => setActiveTab('transactions')}>
+            <Text style={styles.actionIcon}>📊</Text>
+            <Text style={styles.actionLabel}>View Transactions</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionCard} onPress={() => setActiveTab('leaderboard')}>
+            <Text style={styles.actionIcon}>🏆</Text>
+            <Text style={styles.actionLabel}>Leaderboard</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionCard} onPress={handleRefresh}>
+            <Text style={styles.actionIcon}>🔄</Text>
+            <Text style={styles.actionLabel}>Refresh</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </ScrollView>
+  );
+
+  const renderTransactions = () => (
+    <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Transaction History</Text>
+        {transactions.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateIcon}>📄</Text>
+            <Text style={styles.emptyStateTitle}>No Transactions Yet</Text>
+            <Text style={styles.emptyStateText}>
+              Complete levels to start earning rewards and see your transaction history!
+            </Text>
+          </View>
+        ) : (
+          transactions.map((tx, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.transactionCard}
+              onPress={() => openExplorer(tx.hash)}
+            >
+              <View style={styles.transactionHeader}>
+                <Text style={styles.transactionType}>{formatTransactionType(tx.type)}</Text>
+                <Text style={styles.transactionTime}>{formatTimestamp(tx.timestamp)}</Text>
+              </View>
+              <View style={styles.transactionDetails}>
+                <Text style={styles.transactionHash}>{formatAddress(tx.hash)}</Text>
+                {tx.amount && (
+                  <Text style={styles.transactionAmount}>+{tx.amount} cUSD</Text>
+                )}
+                {tx.levelId && (
+                  <Text style={styles.transactionLevel}>Level {tx.levelId}</Text>
+                )}
+              </View>
+            </TouchableOpacity>
+          ))
+        )}
+      </View>
+    </ScrollView>
+  );
+
+  const renderLeaderboard = () => (
+    <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Global Leaderboard</Text>
+        {leaderboard.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateIcon}>🏆</Text>
+            <Text style={styles.emptyStateTitle}>Leaderboard Loading</Text>
+            <Text style={styles.emptyStateText}>
+              The leaderboard is being updated. Check back soon!
+            </Text>
+          </View>
+        ) : (
+          leaderboard.map((player, index) => (
+            <View
+              key={index}
+              style={[
+                styles.leaderboardCard,
+                player.address === walletState.address && styles.currentPlayerCard
+              ]}
+            >
+              <View style={styles.rankContainer}>
+                <Text style={[
+                  styles.rankText,
+                  index < 3 && styles.topRankText
+                ]}>
+                  #{player.rank}
+                </Text>
+              </View>
+              <View style={styles.playerInfo}>
+                <Text style={styles.playerAddress}>
+                  {formatAddress(player.address)}
+                  {player.address === walletState.address && ' (You)'}
+                </Text>
+                <Text style={styles.playerScore}>{player.score.toLocaleString()} points</Text>
+              </View>
+              <View style={styles.playerStats}>
+                <Text style={styles.playerLevels}>{player.levelsCompleted} levels</Text>
+              </View>
+            </View>
+          ))
+        )}
+      </View>
+    </ScrollView>
+  );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#1a1a2e" />
+      
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Wallet</Text>
-        <TouchableOpacity style={styles.disconnectButton} onPress={handleDisconnect}>
-          <Text style={styles.disconnectButtonText}>Disconnect</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
+        
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Wallet</Text>
+          <Text style={styles.headerSubtitle}>
+            {walletState.isConnected ? 'Connected' : 'Not Connected'}
+          </Text>
+        </View>
+        
+        <TouchableOpacity style={styles.refreshButton} onPress={handleRefresh}>
+          <Text style={styles.refreshButtonText}>🔄</Text>
         </TouchableOpacity>
       </View>
 
+      {/* Wallet Connection */}
+      <WalletConnect showBalance={false} compact />
+
+      {/* Tabs */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'overview' && styles.activeTab]}
+          onPress={() => setActiveTab('overview')}
+        >
+          <Text style={[styles.tabText, activeTab === 'overview' && styles.activeTabText]}>
+            Overview
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'transactions' && styles.activeTab]}
+          onPress={() => setActiveTab('transactions')}
+        >
+          <Text style={[styles.tabText, activeTab === 'transactions' && styles.activeTabText]}>
+            Transactions
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'leaderboard' && styles.activeTab]}
+          onPress={() => setActiveTab('leaderboard')}
+        >
+          <Text style={[styles.tabText, activeTab === 'leaderboard' && styles.activeTabText]}>
+            Leaderboard
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Tab Content */}
       <ScrollView
-        style={styles.scrollView}
+        style={styles.content}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
         }
       >
-        {/* Wallet Info */}
-        <View style={styles.walletInfoCard}>
-          <Text style={styles.walletAddress}>
-            {connection.address.slice(0, 6)}...{connection.address.slice(-4)}
-          </Text>
-          <Text style={styles.networkText}>Celo Alfajores Testnet</Text>
-        </View>
-
-        {/* Balances */}
-        <View style={styles.balancesCard}>
-          <Text style={styles.cardTitle}>Balances</Text>
-          <View style={styles.balanceItem}>
-            <Text style={styles.balanceLabel}>CELO</Text>
-            <Text style={styles.balanceValue}>{connection.balance.CELO}</Text>
-          </View>
-          <View style={styles.balanceItem}>
-            <Text style={styles.balanceLabel}>cUSD</Text>
-            <Text style={styles.balanceValue}>{connection.balance.cUSD}</Text>
-          </View>
-          <View style={styles.balanceItem}>
-            <Text style={styles.balanceLabel}>cEUR</Text>
-            <Text style={styles.balanceValue}>{connection.balance.cEUR}</Text>
-          </View>
-        </View>
-
-        {/* Game Stats */}
-        {gameState && (
-          <View style={styles.gameStatsCard}>
-            <Text style={styles.cardTitle}>Game Statistics</Text>
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>Current Score</Text>
-              <Text style={styles.statValue}>{gameState.score.toLocaleString()}</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>Current Level</Text>
-              <Text style={styles.statValue}>{gameState.level}</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>Combos</Text>
-              <Text style={styles.statValue}>{gameState.combos}</Text>
-            </View>
-          </View>
-        )}
-
-        {/* Actions */}
-        <View style={styles.actionsCard}>
-          <Text style={styles.cardTitle}>Actions</Text>
-          
-          <TouchableOpacity style={styles.actionButton} onPress={handleClaimReward}>
-            <Text style={styles.actionButtonText}>🎁 Claim Rewards</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.actionButton} onPress={handleViewNFTs}>
-            <Text style={styles.actionButtonText}>💎 View NFT Collection</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.actionButton} onPress={onRefresh}>
-            <Text style={styles.actionButtonText}>🔄 Refresh Balance</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Rewards Info */}
-        <View style={styles.rewardsInfoCard}>
-          <Text style={styles.cardTitle}>Reward System</Text>
-          <View style={styles.rewardItem}>
-            <Text style={styles.rewardIcon}>🎯</Text>
-            <Text style={styles.rewardText}>Level Complete: 0.5 cUSD</Text>
-          </View>
-          <View style={styles.rewardItem}>
-            <Text style={styles.rewardIcon}>🎁</Text>
-            <Text style={styles.rewardText}>Daily Bonus: 1 cUSD</Text>
-          </View>
-          <View style={styles.rewardItem}>
-            <Text style={styles.rewardIcon}>🏆</Text>
-            <Text style={styles.rewardText}>Achievement: 2 cUSD</Text>
-          </View>
-          <View style={styles.rewardItem}>
-            <Text style={styles.rewardIcon}>💥</Text>
-            <Text style={styles.rewardText}>Combo Bonus: 0.1 cUSD per combo</Text>
-          </View>
-        </View>
-
-        {/* Network Info */}
-        <View style={styles.networkInfoCard}>
-          <Text style={styles.cardTitle}>Network Information</Text>
-          <Text style={styles.networkInfoText}>
-            You're connected to Celo Alfajores testnet. This is a testing environment where you can earn test tokens and NFTs.
-          </Text>
-          <Text style={styles.networkInfoText}>
-            Get test tokens from the faucet: https://faucet.celo.org/
-          </Text>
-        </View>
+        {activeTab === 'overview' && renderOverview()}
+        {activeTab === 'transactions' && renderTransactions()}
+        {activeTab === 'leaderboard' && renderLeaderboard()}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -236,225 +371,290 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingBottom: 15,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#fff',
+  backButton: {
+    padding: 8,
   },
-  subtitle: {
+  backButtonText: {
+    color: '#FFFFFF',
     fontSize: 16,
-    color: '#a0a0a0',
-    marginTop: 5,
+    fontWeight: '600',
   },
-  disconnectButton: {
-    backgroundColor: '#FF5722',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  headerSubtitle: {
+    color: '#A0A0A0',
+    fontSize: 14,
+    marginTop: 2,
+  },
+  refreshButton: {
+    padding: 8,
+  },
+  refreshButtonText: {
+    fontSize: 20,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    marginHorizontal: 20,
+    borderRadius: 10,
+    padding: 4,
+    marginBottom: 20,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
     borderRadius: 8,
   },
-  disconnectButtonText: {
-    color: '#fff',
+  activeTab: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  tabText: {
+    color: '#A0A0A0',
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: '600',
+  },
+  activeTabText: {
+    color: '#FFFFFF',
   },
   content: {
     flex: 1,
-    padding: 20,
   },
-  scrollView: {
-    flex: 1,
-    padding: 20,
+  tabContent: {
+    paddingHorizontal: 20,
   },
-  walletCard: {
-    backgroundColor: '#16213e',
-    padding: 30,
-    borderRadius: 15,
-    alignItems: 'center',
-    marginBottom: 20,
+  section: {
+    marginBottom: 24,
   },
-  walletIcon: {
-    fontSize: 60,
-    marginBottom: 20,
-  },
-  walletTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 10,
-  },
-  walletDescription: {
-    fontSize: 16,
-    color: '#a0a0a0',
-    textAlign: 'center',
-    marginBottom: 30,
-    lineHeight: 24,
-  },
-  connectButton: {
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 30,
-    paddingVertical: 15,
-    borderRadius: 10,
-    marginBottom: 20,
-  },
-  disabledButton: {
-    backgroundColor: '#666',
-  },
-  connectButtonText: {
-    color: '#fff',
+  sectionTitle: {
+    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 12,
   },
-  errorText: {
-    color: '#FF5722',
-    fontSize: 14,
-    textAlign: 'center',
+  statusCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    padding: 16,
   },
-  featuresCard: {
-    backgroundColor: '#16213e',
-    padding: 20,
-    borderRadius: 15,
-  },
-  featuresTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  featureList: {
-    gap: 15,
-  },
-  featureItem: {
+  statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
-  featureIcon: {
-    fontSize: 24,
-    marginRight: 15,
+  statusLabel: {
+    color: '#A0A0A0',
+    fontSize: 14,
   },
-  featureText: {
-    color: '#a0a0a0',
-    fontSize: 16,
-    flex: 1,
-  },
-  walletInfoCard: {
-    backgroundColor: '#16213e',
-    padding: 20,
-    borderRadius: 15,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  walletAddress: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#4CAF50',
-    marginBottom: 5,
+  networkBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   networkText: {
-    fontSize: 14,
-    color: '#a0a0a0',
-  },
-  balancesCard: {
-    backgroundColor: '#16213e',
-    padding: 20,
-    borderRadius: 15,
-    marginBottom: 20,
-  },
-  cardTitle: {
-    fontSize: 20,
+    color: '#FFFFFF',
+    fontSize: 12,
     fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 15,
   },
-  balanceItem: {
+  addressText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontFamily: 'monospace',
+  },
+  balanceGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  balanceCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    padding: 16,
     alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  balanceIcon: {
+    fontSize: 24,
+    marginBottom: 8,
   },
   balanceLabel: {
-    fontSize: 16,
-    color: '#a0a0a0',
+    color: '#A0A0A0',
+    fontSize: 12,
+    marginBottom: 4,
   },
   balanceValue: {
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#fff',
   },
-  gameStatsCard: {
-    backgroundColor: '#16213e',
-    padding: 20,
-    borderRadius: 15,
-    marginBottom: 20,
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
-  statItem: {
+  statCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    width: '48%',
+    marginBottom: 12,
+  },
+  statValue: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  statLabel: {
+    color: '#A0A0A0',
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  actionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  actionCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    width: '48%',
+    marginBottom: 12,
+  },
+  actionIcon: {
+    fontSize: 24,
+    marginBottom: 8,
+  },
+  actionLabel: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  transactionCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+  },
+  transactionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8,
+    marginBottom: 8,
   },
-  statLabel: {
+  transactionType: {
+    color: '#FFFFFF',
     fontSize: 14,
-    color: '#a0a0a0',
+    fontWeight: '600',
   },
-  statValue: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#fff',
+  transactionTime: {
+    color: '#A0A0A0',
+    fontSize: 12,
   },
-  actionsCard: {
-    backgroundColor: '#16213e',
-    padding: 20,
-    borderRadius: 15,
-    marginBottom: 20,
-  },
-  actionButton: {
-    backgroundColor: '#4CAF50',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
+  transactionDetails: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  actionButtonText: {
-    color: '#fff',
+  transactionHash: {
+    color: '#A0A0A0',
+    fontSize: 12,
+    fontFamily: 'monospace',
+  },
+  transactionAmount: {
+    color: '#2ECC71',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  transactionLevel: {
+    color: '#3498DB',
+    fontSize: 12,
+  },
+  leaderboardCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  currentPlayerCard: {
+    backgroundColor: 'rgba(46, 204, 113, 0.2)',
+    borderWidth: 1,
+    borderColor: '#2ECC71',
+  },
+  rankContainer: {
+    width: 40,
+    alignItems: 'center',
+  },
+  rankText: {
+    color: '#A0A0A0',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  rewardsInfoCard: {
-    backgroundColor: '#16213e',
-    padding: 20,
-    borderRadius: 15,
-    marginBottom: 20,
+  topRankText: {
+    color: '#FFD700',
   },
-  rewardItem: {
-    flexDirection: 'row',
+  playerInfo: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  playerAddress: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  playerScore: {
+    color: '#A0A0A0',
+    fontSize: 12,
+  },
+  playerStats: {
+    alignItems: 'flex-end',
+  },
+  playerLevels: {
+    color: '#3498DB',
+    fontSize: 12,
+  },
+  emptyState: {
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 40,
   },
-  rewardIcon: {
-    fontSize: 20,
-    marginRight: 15,
+  emptyStateIcon: {
+    fontSize: 48,
+    marginBottom: 16,
   },
-  rewardText: {
-    color: '#a0a0a0',
+  emptyStateTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  emptyStateText: {
+    color: '#A0A0A0',
     fontSize: 14,
-  },
-  networkInfoCard: {
-    backgroundColor: '#16213e',
-    padding: 20,
-    borderRadius: 15,
-    marginBottom: 20,
-  },
-  networkInfoText: {
-    color: '#a0a0a0',
-    fontSize: 14,
+    textAlign: 'center',
     lineHeight: 20,
-    marginBottom: 10,
+    paddingHorizontal: 20,
   },
 });
+
+export default WalletScreen;
