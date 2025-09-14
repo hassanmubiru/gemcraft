@@ -1,284 +1,301 @@
+// Level Selection Screen with 100-level roadmap integration
 import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   ScrollView,
   Dimensions,
+  StatusBar,
+  Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { LevelSelectScreenNavigationProp } from '../types/navigation';
-import { LevelConfig } from '../types/game';
+import { allLevels, getLevelsByDifficulty } from '../data/levelRoadmap';
+import { getDailyLoginBonus } from '../data/engagementFeatures';
 
-const { width } = Dimensions.get('window');
-const LEVELS_PER_ROW = 3;
-const LEVEL_SIZE = (width - 60) / LEVELS_PER_ROW;
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-// Sample levels for development
-const SAMPLE_LEVELS: LevelConfig[] = [
-  {
-    id: 1,
-    name: "First Steps",
-    description: "Match 3 gems to get started",
-    targetScore: 1000,
-    moves: 20,
-    unlocked: true,
-    stars: 0,
-    gameMode: 'score',
-    specialObjectives: [
-      {
-        type: 'score',
-        target: 1000,
-        description: 'Reach 1000 points',
-        completed: false,
-        current: 0,
-      }
-    ],
-  },
-  {
-    id: 2,
-    name: "Gem Collector",
-    description: "Reach 2000 points in 15 moves",
-    targetScore: 2000,
-    moves: 15,
-    unlocked: true,
-    stars: 0,
-    gameMode: 'score',
-    specialObjectives: [
-      {
-        type: 'score',
-        target: 2000,
-        description: 'Reach 2000 points',
-        completed: false,
-        current: 0,
-      }
-    ],
-  },
-  {
-    id: 3,
-    name: "Speed Challenge",
-    description: "Score 3000 points in 2 minutes",
-    targetScore: 3000,
-    moves: 30,
-    timeLimit: 120,
-    unlocked: true,
-    stars: 0,
-    gameMode: 'score',
-    specialObjectives: [
-      {
-        type: 'score',
-        target: 3000,
-        description: 'Reach 3000 points',
-        completed: false,
-        current: 0,
-      }
-    ],
-  },
-  {
-    id: 4,
-    name: "Obstacle Breaker",
-    description: "Clear all stone obstacles",
-    targetScore: 1500,
-    moves: 25,
-    unlocked: false,
-    stars: 0,
-    gameMode: 'clear_obstacles',
-    obstacles: [
-      { type: 'stone', position: { row: 2, col: 2 }, health: 2 },
-      { type: 'stone', position: { row: 2, col: 5 }, health: 2 },
-      { type: 'ice', position: { row: 5, col: 2 }, health: 1 },
-      { type: 'ice', position: { row: 5, col: 5 }, health: 1 },
-    ],
-    specialObjectives: [
-      {
-        type: 'clear_obstacles',
-        target: 4,
-        description: 'Clear all obstacles',
-        completed: false,
-        current: 0,
-      }
-    ],
-  },
-  {
-    id: 5,
-    name: "Expert Challenge",
-    description: "Reach 8000 points in 5 minutes",
-    targetScore: 8000,
-    moves: 50,
-    timeLimit: 300,
-    unlocked: false,
-    stars: 0,
-    gameMode: 'mixed',
-    obstacles: [
-      { type: 'locked', position: { row: 1, col: 1 }, health: 1 },
-      { type: 'locked', position: { row: 1, col: 6 }, health: 1 },
-      { type: 'metal', position: { row: 6, col: 1 }, health: 3 },
-      { type: 'metal', position: { row: 6, col: 6 }, health: 3 },
-    ],
-    specialObjectives: [
-      {
-        type: 'score',
-        target: 8000,
-        description: 'Reach 8000 points',
-        completed: false,
-        current: 0,
-      },
-      {
-        type: 'clear_obstacles',
-        target: 4,
-        description: 'Clear all obstacles',
-        completed: false,
-        current: 0,
-      }
-    ],
-  },
-];
+interface LevelSelectScreenProps {
+  navigation: any;
+}
 
-// Levels will be loaded from blockchain or local storage
-const EMPTY_LEVELS: LevelConfig[] = [];
+const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({ navigation }) => {
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('tutorial');
+  const [unlockedLevels, setUnlockedLevels] = useState<Set<number>>(new Set([1]));
+  const [completedLevels, setCompletedLevels] = useState<Set<number>>(new Set());
+  const [dailyBonus, setDailyBonus] = useState<any>(null);
 
-export default function LevelSelectScreen() {
-  const navigation = useNavigation<LevelSelectScreenNavigationProp>();
-  const [levels, setLevels] = useState<LevelConfig[]>(SAMPLE_LEVELS);
+  const difficulties = [
+    { key: 'tutorial', label: 'Tutorial', color: '#2ECC71', levels: 10 },
+    { key: 'beginner', label: 'Beginner', color: '#F39C12', levels: 10 },
+    { key: 'intermediate', label: 'Intermediate', color: '#E67E22', levels: 20 },
+    { key: 'advanced', label: 'Advanced', color: '#E74C3C', levels: 20 },
+    { key: 'expert', label: 'Expert', color: '#8E44AD', levels: 20 },
+    { key: 'master', label: 'Master', color: '#C0392B', levels: 20 },
+  ];
 
-  const handleLevelPress = (level: LevelConfig) => {
-    if (level.unlocked) {
-      navigation.navigate('Game', { level });
+  useEffect(() => {
+    // Load player progress
+    loadPlayerProgress();
+    
+    // Check daily login bonus
+    checkDailyBonus();
+  }, []);
+
+  const loadPlayerProgress = () => {
+    // In a real app, this would load from storage/blockchain
+    // For now, we'll simulate some progress
+    const mockUnlocked = new Set([1, 2, 3, 4, 5, 11, 12, 13, 21, 22]);
+    const mockCompleted = new Set([1, 2, 3, 11, 12, 21]);
+    
+    setUnlockedLevels(mockUnlocked);
+    setCompletedLevels(mockCompleted);
+  };
+
+  const checkDailyBonus = () => {
+    // Check if player is eligible for daily bonus
+    const lastLogin = localStorage.getItem('lastLogin');
+    const today = new Date().toDateString();
+    
+    if (lastLogin !== today) {
+      const day = parseInt(localStorage.getItem('loginStreak') || '1');
+      const bonus = getDailyLoginBonus(day);
+      setDailyBonus(bonus);
+      
+      // Update login streak
+      localStorage.setItem('lastLogin', today);
+      localStorage.setItem('loginStreak', (day + 1).toString());
     }
   };
 
-  const renderStars = (count: number) => {
-    const stars = [];
-    for (let i = 0; i < 3; i++) {
-      stars.push(
-        <Text key={i} style={[styles.star, i < count && styles.starFilled]}>
-          ⭐
-        </Text>
+  const claimDailyBonus = () => {
+    if (dailyBonus) {
+      Alert.alert(
+        'Daily Bonus Claimed!',
+        `You received:\n• ${dailyBonus.reward.cUSD} cUSD\n• ${dailyBonus.reward.gems} gems\n• ${(dailyBonus.reward.nftChance * 100).toFixed(1)}% NFT chance`,
+        [{ text: 'Awesome!', onPress: () => setDailyBonus(null) }]
       );
     }
-    return stars;
   };
 
-  const renderLevel = (level: LevelConfig) => {
+  const handleLevelPress = (level: any) => {
+    if (!unlockedLevels.has(level.id)) {
+      Alert.alert(
+        'Level Locked',
+        'Complete the previous levels to unlock this one.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    // Navigate to game screen
+    navigation.navigate('PhaserGame', { level });
+  };
+
+  const getLevelStatus = (level: any) => {
+    if (completedLevels.has(level.id)) {
+      return 'completed';
+    } else if (unlockedLevels.has(level.id)) {
+      return 'unlocked';
+    } else {
+      return 'locked';
+    }
+  };
+
+  const getLevelIcon = (level: any) => {
+    const status = getLevelStatus(level);
+    
+    switch (status) {
+      case 'completed':
+        return '✅';
+      case 'unlocked':
+        return '🎮';
+      case 'locked':
+        return '🔒';
+      default:
+        return '❓';
+    }
+  };
+
+  const getLevelColor = (level: any) => {
+    const status = getLevelStatus(level);
+    
+    switch (status) {
+      case 'completed':
+        return '#2ECC71';
+      case 'unlocked':
+        return '#3498DB';
+      case 'locked':
+        return '#7F8C8D';
+      default:
+        return '#95A5A6';
+    }
+  };
+
+  const renderLevel = (level: any) => {
+    const status = getLevelStatus(level);
+    const isLocked = status === 'locked';
+    
     return (
       <TouchableOpacity
         key={level.id}
         style={[
           styles.levelButton,
-          !level.unlocked && styles.lockedLevel,
+          { backgroundColor: getLevelColor(level) },
+          isLocked && styles.lockedLevel
         ]}
         onPress={() => handleLevelPress(level)}
-        disabled={!level.unlocked}
+        disabled={isLocked}
       >
-        <View style={styles.levelContent}>
-          <Text style={[
-            styles.levelNumber,
-            !level.unlocked && styles.lockedText,
-          ]}>
-            {level.id}
-          </Text>
-          
-          <Text style={[
-            styles.levelName,
-            !level.unlocked && styles.lockedText,
-          ]}>
-            {level.name}
-          </Text>
-          
-          <View style={styles.starsContainer}>
-            {renderStars(level.stars)}
-          </View>
-          
-          <Text style={[
-            styles.levelDescription,
-            !level.unlocked && styles.lockedText,
-          ]}>
-            {level.description}
-          </Text>
-          
-          <View style={styles.levelStats}>
-            <Text style={[
-              styles.statText,
-              !level.unlocked && styles.lockedText,
-            ]}>
-              Target: {level.targetScore.toLocaleString()}
+        <Text style={styles.levelIcon}>{getLevelIcon(level)}</Text>
+        <Text style={styles.levelNumber}>{level.id}</Text>
+        <Text style={styles.levelName} numberOfLines={2}>
+          {level.name}
+        </Text>
+        
+        {level.blockchainReward && (
+          <View style={styles.rewardIndicator}>
+            <Text style={styles.rewardText}>
+              {level.blockchainReward.cUSD > 0 && `💰 ${level.blockchainReward.cUSD}cUSD`}
+              {level.blockchainReward.nftChance > 0 && ` 🎨 NFT`}
             </Text>
-            <Text style={[
-              styles.statText,
-              !level.unlocked && styles.lockedText,
-            ]}>
-              Moves: {level.moves}
-            </Text>
-            {level.timeLimit && (
-              <Text style={[
-                styles.statText,
-                !level.unlocked && styles.lockedText,
-              ]}>
-                Time: {level.timeLimit}s
-              </Text>
-            )}
           </View>
-          
-          {!level.unlocked && (
-            <View style={styles.lockOverlay}>
-              <Text style={styles.lockIcon}>🔒</Text>
-            </View>
-          )}
-        </View>
+        )}
+        
+        {status === 'completed' && (
+          <View style={styles.completedBadge}>
+            <Text style={styles.completedText}>COMPLETED</Text>
+          </View>
+        )}
       </TouchableOpacity>
     );
   };
 
-  const renderLevelRow = (levelRow: LevelConfig[]) => {
+  const renderDifficultySection = (difficulty: any) => {
+    const levels = getLevelsByDifficulty(difficulty.key);
+    const completedCount = levels.filter(level => completedLevels.has(level.id)).length;
+    const progress = (completedCount / levels.length) * 100;
+    
     return (
-      <View key={levelRow[0].id} style={styles.levelRow}>
-        {levelRow.map(renderLevel)}
+      <View key={difficulty.key} style={styles.difficultySection}>
+        <View style={styles.difficultyHeader}>
+          <View style={styles.difficultyInfo}>
+            <Text style={[styles.difficultyTitle, { color: difficulty.color }]}>
+              {difficulty.label}
+            </Text>
+            <Text style={styles.difficultySubtitle}>
+              Levels {levels[0]?.id}-{levels[levels.length - 1]?.id} • {completedCount}/{levels.length} completed
+            </Text>
+          </View>
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <View 
+                style={[
+                  styles.progressFill, 
+                  { 
+                    width: `${progress}%`,
+                    backgroundColor: difficulty.color 
+                  }
+                ]} 
+              />
+            </View>
+            <Text style={styles.progressText}>{Math.round(progress)}%</Text>
+          </View>
+        </View>
+        
+        <View style={styles.levelsGrid}>
+          {levels.map(renderLevel)}
+        </View>
       </View>
     );
   };
 
-  const levelRows = [];
-  for (let i = 0; i < levels.length; i += LEVELS_PER_ROW) {
-    levelRows.push(levels.slice(i, i + LEVELS_PER_ROW));
-  }
-
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#1a1a2e" />
+      
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Select Level</Text>
-        <Text style={styles.subtitle}>Choose your challenge</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
+        
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Level Selection</Text>
+          <Text style={styles.headerSubtitle}>
+            {completedLevels.size}/{allLevels.length} levels completed
+          </Text>
+        </View>
+        
+        <TouchableOpacity style={styles.settingsButton} onPress={() => navigation.navigate('Settings')}>
+          <Text style={styles.settingsButtonText}>⚙️</Text>
+        </TouchableOpacity>
       </View>
 
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {levels.length > 0 ? (
-          <>
-            {levelRows.map(renderLevelRow)}
-            {/* Coming Soon */}
-            <View style={styles.comingSoonContainer}>
-              <Text style={styles.comingSoonText}>More levels coming soon!</Text>
-              <Text style={styles.comingSoonSubtext}>
-                Complete all levels to unlock special challenges
-              </Text>
-            </View>
-          </>
-        ) : (
-          <View style={styles.emptyStateContainer}>
-            <Text style={styles.emptyStateText}>No levels available</Text>
-            <Text style={styles.emptyStateSubtext}>
-              Levels will be loaded from the blockchain
-            </Text>
+      {/* Daily Bonus */}
+      {dailyBonus && (
+        <View style={styles.dailyBonusContainer}>
+          <View style={styles.dailyBonusContent}>
+            <Text style={styles.dailyBonusTitle}>Daily Login Bonus!</Text>
+            <Text style={styles.dailyBonusText}>{dailyBonus.description}</Text>
+            <TouchableOpacity style={styles.claimButton} onPress={claimDailyBonus}>
+              <Text style={styles.claimButtonText}>Claim Bonus</Text>
+            </TouchableOpacity>
           </View>
-        )}
+        </View>
+      )}
+
+      {/* Difficulty Tabs */}
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        style={styles.difficultyTabs}
+        contentContainerStyle={styles.difficultyTabsContent}
+      >
+        {difficulties.map(difficulty => (
+          <TouchableOpacity
+            key={difficulty.key}
+            style={[
+              styles.difficultyTab,
+              selectedDifficulty === difficulty.key && styles.activeDifficultyTab,
+              { borderColor: difficulty.color }
+            ]}
+            onPress={() => setSelectedDifficulty(difficulty.key)}
+          >
+            <Text style={[
+              styles.difficultyTabText,
+              selectedDifficulty === difficulty.key && { color: difficulty.color }
+            ]}>
+              {difficulty.label}
+            </Text>
+            <Text style={styles.difficultyTabCount}>{difficulty.levels}</Text>
+          </TouchableOpacity>
+        ))}
       </ScrollView>
-    </SafeAreaView>
+
+      {/* Levels List */}
+      <ScrollView style={styles.levelsContainer} showsVerticalScrollIndicator={false}>
+        {renderDifficultySection(difficulties.find(d => d.key === selectedDifficulty)!)}
+      </ScrollView>
+
+      {/* Bottom Stats */}
+      <View style={styles.bottomStats}>
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>{completedLevels.size}</Text>
+          <Text style={styles.statLabel}>Completed</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>{unlockedLevels.size}</Text>
+          <Text style={styles.statLabel}>Unlocked</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>{allLevels.length - unlockedLevels.size}</Text>
+          <Text style={styles.statLabel}>Locked</Text>
+        </View>
+      </View>
+    </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -286,146 +303,233 @@ const styles = StyleSheet.create({
     backgroundColor: '#1a1a2e',
   },
   header: {
-    padding: 20,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingBottom: 15,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 5,
+  backButton: {
+    padding: 8,
   },
-  subtitle: {
+  backButtonText: {
+    color: '#FFFFFF',
     fontSize: 16,
-    color: '#a0a0a0',
+    fontWeight: '600',
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  levelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  levelButton: {
-    width: LEVEL_SIZE,
-    height: LEVEL_SIZE * 1.2,
-    backgroundColor: '#16213e',
-    borderRadius: 15,
-    padding: 10,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  lockedLevel: {
-    backgroundColor: '#333',
-    opacity: 0.6,
-  },
-  levelContent: {
+  headerCenter: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
-  levelNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#4CAF50',
-  },
-  levelName: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
-  },
-  starsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  star: {
-    fontSize: 12,
-    color: '#666',
-    marginHorizontal: 1,
-  },
-  starFilled: {
-    color: '#FFD700',
-  },
-  levelDescription: {
-    fontSize: 10,
-    color: '#a0a0a0',
-    textAlign: 'center',
-    marginVertical: 5,
-  },
-  levelStats: {
-    alignItems: 'center',
-  },
-  statText: {
-    fontSize: 9,
-    color: '#a0a0a0',
-    marginVertical: 1,
-  },
-  lockedText: {
-    color: '#666',
-  },
-  lockOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    borderRadius: 15,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  lockIcon: {
-    fontSize: 30,
-    color: '#fff',
-  },
-  comingSoonContainer: {
-    backgroundColor: '#16213e',
-    padding: 30,
-    borderRadius: 15,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  comingSoonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 10,
-  },
-  comingSoonSubtext: {
-    fontSize: 14,
-    color: '#a0a0a0',
-    textAlign: 'center',
-  },
-  emptyStateContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 60,
-  },
-  emptyStateText: {
+  headerTitle: {
+    color: '#FFFFFF',
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
+  },
+  headerSubtitle: {
+    color: '#A0A0A0',
+    fontSize: 14,
+    marginTop: 2,
+  },
+  settingsButton: {
+    padding: 8,
+  },
+  settingsButtonText: {
+    fontSize: 20,
+  },
+  dailyBonusContainer: {
+    marginHorizontal: 20,
+    marginBottom: 15,
+    backgroundColor: 'rgba(46, 204, 113, 0.1)',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#2ECC71',
+  },
+  dailyBonusContent: {
+    padding: 15,
+    alignItems: 'center',
+  },
+  dailyBonusTitle: {
+    color: '#2ECC71',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  dailyBonusText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    textAlign: 'center',
     marginBottom: 10,
+  },
+  claimButton: {
+    backgroundColor: '#2ECC71',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  claimButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  difficultyTabs: {
+    marginBottom: 15,
+  },
+  difficultyTabsContent: {
+    paddingHorizontal: 20,
+  },
+  difficultyTab: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    marginRight: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  activeDifficultyTab: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  difficultyTabText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
     textAlign: 'center',
   },
-  emptyStateSubtext: {
-    fontSize: 14,
-    color: '#a0a0a0',
+  difficultyTabCount: {
+    color: '#A0A0A0',
+    fontSize: 12,
     textAlign: 'center',
-    paddingHorizontal: 40,
+    marginTop: 2,
+  },
+  levelsContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  difficultySection: {
+    marginBottom: 20,
+  },
+  difficultyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  difficultyInfo: {
+    flex: 1,
+  },
+  difficultyTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  difficultySubtitle: {
+    color: '#A0A0A0',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  progressContainer: {
+    alignItems: 'flex-end',
+  },
+  progressBar: {
+    width: 80,
+    height: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  progressText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  levelsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  levelButton: {
+    width: (screenWidth - 60) / 3,
+    aspectRatio: 1,
+    marginBottom: 10,
+    borderRadius: 10,
+    padding: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  lockedLevel: {
+    opacity: 0.5,
+  },
+  levelIcon: {
+    fontSize: 20,
+    marginBottom: 4,
+  },
+  levelNumber: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  levelName: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  rewardIndicator: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 4,
+    padding: 2,
+  },
+  rewardText: {
+    color: '#FFD700',
+    fontSize: 8,
+    fontWeight: 'bold',
+  },
+  completedBadge: {
+    position: 'absolute',
+    bottom: 4,
+    left: 4,
+    right: 4,
+    backgroundColor: 'rgba(46, 204, 113, 0.9)',
+    borderRadius: 4,
+    padding: 2,
+  },
+  completedText: {
+    color: '#FFFFFF',
+    fontSize: 8,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  bottomStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    marginHorizontal: 20,
+    marginBottom: 20,
+    borderRadius: 10,
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statValue: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  statLabel: {
+    color: '#A0A0A0',
+    fontSize: 12,
+    marginTop: 2,
   },
 });
+
+export default LevelSelectScreen;
