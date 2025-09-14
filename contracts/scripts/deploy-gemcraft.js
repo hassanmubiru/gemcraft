@@ -129,10 +129,18 @@ async function main() {
     };
 
     console.log("   Setting reward amounts...");
-    await rewards.updateRewardAmount("daily_bonus", rewardAmounts.dailyBonus);
-    await rewards.updateRewardAmount("level_complete", rewardAmounts.levelComplete);
-    await rewards.updateRewardAmount("achievement", rewardAmounts.achievement);
-    await rewards.updateRewardAmount("combo_bonus", rewardAmounts.comboBonus);
+    await rewards.updateRewardAmount("daily_bonus", rewardAmounts.dailyBonus, {
+      gasPrice: gasPriceWithBuffer
+    });
+    await rewards.updateRewardAmount("level_complete", rewardAmounts.levelComplete, {
+      gasPrice: gasPriceWithBuffer
+    });
+    await rewards.updateRewardAmount("achievement", rewardAmounts.achievement, {
+      gasPrice: gasPriceWithBuffer
+    });
+    await rewards.updateRewardAmount("combo_bonus", rewardAmounts.comboBonus, {
+      gasPrice: gasPriceWithBuffer
+    });
     console.log("✅ Reward amounts configured");
 
     // 6. Mint initial test NFTs
