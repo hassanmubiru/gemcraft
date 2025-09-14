@@ -11,7 +11,7 @@ import {
 import { GameState, Position, LevelConfig } from '../types/GameTypes';
 import GameBoardComponent from '../components/GameBoard';
 import { GameEngine } from '../game/GameEngine';
-import { MockContractInteraction } from '../utils/MockContractInteraction';
+import { blockchainManager } from '../utils/BlockchainManager';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -28,9 +28,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ route, navigation }) => {
   const { level } = route.params;
   const [gameEngine] = useState(() => {
     const engine = new GameEngine(8, 8, level);
-    // Set up mock blockchain integration
-    const mockContract = new MockContractInteraction();
-    engine.setContractInteraction(mockContract);
+    // Set up blockchain integration (mock or real)
+    const contractInteraction = blockchainManager.getContractInteraction();
+    engine.setContractInteraction(contractInteraction);
     return engine;
   });
   

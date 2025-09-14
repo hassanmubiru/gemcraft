@@ -11,8 +11,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useWallet } from '../contexts/WalletContext';
-import { createContractInteraction, CONTRACT_ADDRESSES } from '../utils/ContractInteraction';
-import { MockContractInteraction } from '../utils/MockContractInteraction';
+import { blockchainManager } from '../utils/BlockchainManager';
 import { getLevelById } from '../data/testLevels';
 
 const { width, height } = Dimensions.get('window');
@@ -50,13 +49,13 @@ const GameResultScreen: React.FC<GameResultScreenProps> = ({ route }) => {
     return 0;
   };
 
-  // Claim rewards from blockchain (using mock for testing)
+  // Claim rewards from blockchain
   const claimRewards = async () => {
     setIsClaimingRewards(true);
     
     try {
-      // Use mock contract interaction for testing
-      const contractInteraction = new MockContractInteraction();
+      // Get contract interaction (mock or real based on mode)
+      const contractInteraction = blockchainManager.getContractInteraction();
       
       const result = await contractInteraction.completeLevel(
         level.id,
@@ -69,9 +68,12 @@ const GameResultScreen: React.FC<GameResultScreenProps> = ({ route }) => {
         setActualReward(result.cUSDReward || '0');
         setNftMinted(result.nftMinted || false);
         
+        const modeText = blockchainManager.areRewardsReal() ? 'Real Blockchain' : 'Test Mode';
+        const transactionText = result.txHash ? `\n\nTransaction: ${result.txHash}` : '';
+        
         Alert.alert(
           '🎉 Rewards Claimed!',
-          `You earned ${result.cUSDReward} cUSD${result.nftMinted ? ' and a rare NFT!' : '!'}\n\nTransaction: ${result.txHash}`
+          `You earned ${result.cUSDReward} cUSD${result.nftMinted ? ' and a rare NFT!' : '!'}\n\nMode: ${modeText}${transactionText}`
         );
       } else {
         Alert.alert('Claim Failed', result.error || 'Failed to claim rewards');
@@ -197,7 +199,9 @@ const GameResultScreen: React.FC<GameResultScreenProps> = ({ route }) => {
                   <Text style={styles.primaryButtonText}>Claiming...</Text>
                 </View>
               ) : (
-                <Text style={styles.primaryButtonText}>💰 Claim Rewards (Test Mode)</Text>
+                <Text style={styles.primaryButtonText}>
+                  💰 Claim Rewards ({blockchainManager.getModeDisplayName()})
+                </Text>
               )}
             </TouchableOpacity>
           )}
