@@ -52,17 +52,13 @@ async function main() {
   });
   await rewards.waitForDeployment();
   const rewardsAddress = await rewards.getAddress();
-    console.log("✅ Rewards contract deployed to:", rewards.address);
-    console.log("   Gas used:", rewardsReceipt.gasUsed.toString());
-    console.log("   Transaction hash:", rewardsReceipt.transactionHash);
+  console.log("✅ Rewards contract deployed to:", rewardsAddress);
 
-    deploymentInfo.contracts.rewards = {
-      address: rewards.address,
-      cUSD: CUSD_ADDRESS,
-      CELO: CELO_ADDRESS,
-      gasUsed: rewardsReceipt.gasUsed.toString(),
-      transactionHash: rewardsReceipt.transactionHash,
-    };
+  deploymentInfo.contracts.rewards = {
+    address: rewardsAddress,
+    cUSD: CUSD_ADDRESS,
+    CELO: CELO_ADDRESS,
+  };
 
   // 2. Deploy NFTGem Contract
   console.log("\n💎 Deploying NFTGem contract...");
