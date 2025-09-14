@@ -168,10 +168,10 @@ async function main() {
       console.log(`      Legendary: ${ethers.formatEther(legendaryPrice)} cUSD`);
       
       nftTests.tests.mintPrices = {
-        common: ethers.utils.formatEther(commonPrice),
-        rare: ethers.utils.formatEther(rarePrice),
-        epic: ethers.utils.formatEther(epicPrice),
-        legendary: ethers.utils.formatEther(legendaryPrice),
+        common: ethers.formatEther(commonPrice),
+        rare: ethers.formatEther(rarePrice),
+        epic: ethers.formatEther(epicPrice),
+        legendary: ethers.formatEther(legendaryPrice),
         passed: true,
       };
     } catch (error) {
