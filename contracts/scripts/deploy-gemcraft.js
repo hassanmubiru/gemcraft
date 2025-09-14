@@ -10,10 +10,10 @@ async function main() {
   const [deployer] = await ethers.getSigners();
   console.log("📝 Deploying contracts with account:", deployer.address);
   
-  const balance = await deployer.getBalance();
-  console.log("💰 Account balance:", ethers.utils.formatEther(balance), "CELO");
+  const balance = await ethers.provider.getBalance(deployer.address);
+  console.log("💰 Account balance:", ethers.formatEther(balance), "CELO");
   
-  if (balance.lt(ethers.utils.parseEther("0.1"))) {
+  if (balance < ethers.parseEther("0.1")) {
     console.log("⚠️  Warning: Low balance! Consider getting test CELO from faucet:");
     console.log("   https://faucet.celo.org/");
   }
@@ -29,7 +29,7 @@ async function main() {
   let deploymentInfo = {
     network: "alfajores",
     deployer: deployer.address,
-    deployerBalance: ethers.utils.formatEther(balance),
+    deployerBalance: ethers.formatEther(balance),
     contracts: {},
     timestamp: new Date().toISOString(),
     blockNumber: 0,
@@ -105,9 +105,9 @@ async function main() {
       const cUSD = await ethers.getContractAt("IERC20", CUSD_ADDRESS);
       const cUSDBalance = await cUSD.balanceOf(deployer.address);
       
-      if (cUSDBalance.gt(0)) {
-        const fundingAmount = cUSDBalance.div(2); // Use half of available cUSD
-        console.log(`   Funding Rewards contract with ${ethers.utils.formatEther(fundingAmount)} cUSD...`);
+      if (cUSDBalance > 0) {
+        const fundingAmount = cUSDBalance / 2n; // Use half of available cUSD
+        console.log(`   Funding Rewards contract with ${ethers.formatEther(fundingAmount)} cUSD...`);
         
         const fundTx = await cUSD.transfer(rewards.address, fundingAmount);
         await fundTx.wait();
@@ -125,10 +125,10 @@ async function main() {
     
     // Update reward amounts for the 100-level system
     const rewardAmounts = {
-      dailyBonus: ethers.utils.parseEther("0.1"), // 0.1 cUSD
-      levelComplete: ethers.utils.parseEther("0.5"), // 0.5 cUSD
-      achievement: ethers.utils.parseEther("2.0"), // 2 cUSD
-      comboBonus: ethers.utils.parseEther("0.1"), // 0.1 cUSD
+      dailyBonus: ethers.parseEther("0.1"), // 0.1 cUSD
+      levelComplete: ethers.parseEther("0.5"), // 0.5 cUSD
+      achievement: ethers.parseEther("2.0"), // 2 cUSD
+      comboBonus: ethers.parseEther("0.1"), // 0.1 cUSD
     };
 
     console.log("   Setting reward amounts...");
