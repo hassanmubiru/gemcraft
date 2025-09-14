@@ -39,11 +39,18 @@ async function main() {
   };
 
   try {
-    // 1. Deploy Rewards Contract
-    console.log("\n🎯 Deploying Rewards contract...");
-    const Rewards = await ethers.getContractFactory("Rewards");
-    const rewardsDeployTx = await Rewards.deploy(CUSD_ADDRESS, CELO_ADDRESS);
-    const rewardsReceipt = await rewardsDeployTx.deployTransaction.wait();
+  // 1. Deploy Rewards Contract
+  console.log("\n🎯 Deploying Rewards contract...");
+  const Rewards = await ethers.getContractFactory("Rewards");
+  
+  // Get current gas price and add some buffer
+  const gasPrice = await ethers.provider.getGasPrice();
+  const gasPriceWithBuffer = gasPrice * 120n / 100n; // 20% buffer
+  
+  const rewardsDeployTx = await Rewards.deploy(CUSD_ADDRESS, CELO_ADDRESS, {
+    gasPrice: gasPriceWithBuffer
+  });
+  const rewardsReceipt = await rewardsDeployTx.deployTransaction.wait();
     
     const rewards = await Rewards.attach(rewardsDeployTx.address);
     console.log("✅ Rewards contract deployed to:", rewards.address);
