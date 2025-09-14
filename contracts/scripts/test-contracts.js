@@ -6,23 +6,26 @@ const path = require("path");
 async function main() {
   console.log("🧪 Testing GemCraft contracts on Celo Alfajores...\n");
 
-  // Load deployment info
-  const deploymentPath = path.join(__dirname, "../deployments");
-  const files = fs.readdirSync(deploymentPath);
-  const latestDeployment = files
-    .filter(file => file.startsWith("gemcraft-alfajores-") && file.endsWith(".json"))
-    .sort()
-    .pop();
+  // Use actual deployed contract addresses
+  const deploymentInfo = {
+    network: "alfajores",
+    contracts: {
+      rewards: {
+        address: "0xd5ea8671F16BFB23044c54ed65eE3A7ab63BF58F",
+        cUSD: "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1",
+        CELO: "0x0000000000000000000000000000000000000000",
+      },
+      nftGem: {
+        address: "0x43161EAAC8726443B5AE5Cd7219cDeF8e43612Fe",
+        baseURI: "https://api.gemcraft.celo.org/metadata/",
+      },
+      leaderboard: {
+        address: "0x254e926B7AEFC03f8519800f25C44E96617475dC",
+      },
+    },
+  };
 
-  if (!latestDeployment) {
-    console.log("❌ No deployment file found. Please deploy contracts first.");
-    return;
-  }
-
-  const deploymentFile = path.join(deploymentPath, latestDeployment);
-  const deploymentInfo = JSON.parse(fs.readFileSync(deploymentFile, "utf8"));
-
-  console.log("📋 Testing contracts from deployment:", latestDeployment);
+  console.log("📋 Testing deployed contracts on Alfajores testnet");
 
   // Get signers
   const [deployer, testUser] = await ethers.getSigners();
