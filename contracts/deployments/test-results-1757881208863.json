@@ -1,0 +1,74 @@
+{
+  "network": "alfajores",
+  "timestamp": "2025-09-14T20:19:54.461Z",
+  "tests": {
+    "rewards": {
+      "contractAddress": "0xd5ea8671F16BFB23044c54ed65eE3A7ab63BF58F",
+      "tests": {
+        "ownerCheck": {
+          "expected": "0x50625608E728cad827066dD78F5B4e8d203619F3",
+          "actual": "0x50625608E728cad827066dD78F5B4e8d203619F3",
+          "passed": true
+        },
+        "rewardAmounts": {
+          "dailyBonus": "0.1",
+          "levelComplete": "0.5",
+          "achievement": "2.0",
+          "comboBonus": "0.1",
+          "passed": true
+        },
+        "cUSDBalance": {
+          "error": "unsupported addressable value (argument=\"target\", value=null, code=INVALID_ARGUMENT, version=6.15.0)"
+        },
+        "dailyBonusCheck": {
+          "canClaim": true,
+          "passed": true
+        }
+      }
+    },
+    "nftGem": {
+      "contractAddress": "0x43161EAAC8726443B5AE5Cd7219cDeF8e43612Fe",
+      "tests": {
+        "ownerCheck": {
+          "expected": "0x50625608E728cad827066dD78F5B4e8d203619F3",
+          "actual": "0x50625608E728cad827066dD78F5B4e8d203619F3",
+          "passed": true
+        },
+        "totalSupply": {
+          "supply": "3",
+          "passed": true
+        },
+        "mintPrices": {
+          "common": "0.0",
+          "rare": "0.1",
+          "epic": "0.5",
+          "legendary": "2.0",
+          "passed": true
+        },
+        "deployerTokens": {
+          "count": 3,
+          "tokens": [
+            "0",
+            "1",
+            "2"
+          ],
+          "passed": true
+        }
+      }
+    },
+    "leaderboard": {
+      "contractAddress": "0x254e926B7AEFC03f8519800f25C44E96617475dC",
+      "tests": {
+        "ownerCheck": {
+          "expected": "0x50625608E728cad827066dD78F5B4e8d203619F3",
+          "actual": "0x50625608E728cad827066dD78F5B4e8d203619F3",
+          "passed": true
+        }
+      }
+    },
+    "nftMinting": {
+      "success": true,
+      "gasUsed": "161347"
+    }
+  }
+}
