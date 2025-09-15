@@ -122,13 +122,13 @@ const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({ navigation }) => 
     
     switch (status) {
       case 'completed':
-        return '#2ECC71';
+        return '#22C55E'; // Modern green
       case 'unlocked':
-        return '#3498DB';
+        return '#3B82F6'; // Modern blue
       case 'locked':
-        return '#7F8C8D';
+        return '#6B7280'; // Modern gray
       default:
-        return '#95A5A6';
+        return '#9CA3AF'; // Light gray
     }
   };
 
