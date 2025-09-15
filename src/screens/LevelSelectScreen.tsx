@@ -26,12 +26,12 @@ const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({ navigation }) => 
   const [dailyBonus, setDailyBonus] = useState<any>(null);
 
   const difficulties = [
-    { key: 'tutorial', label: 'Tutorial', color: '#2ECC71', levels: 10 },
-    { key: 'beginner', label: 'Beginner', color: '#F39C12', levels: 10 },
-    { key: 'intermediate', label: 'Intermediate', color: '#E67E22', levels: 20 },
-    { key: 'advanced', label: 'Advanced', color: '#E74C3C', levels: 20 },
-    { key: 'expert', label: 'Expert', color: '#8E44AD', levels: 20 },
-    { key: 'master', label: 'Master', color: '#C0392B', levels: 20 },
+    { key: 'tutorial', label: 'Tutorial', color: '#22C55E', levels: 10 },
+    { key: 'beginner', label: 'Beginner', color: '#3B82F6', levels: 10 },
+    { key: 'intermediate', label: 'Intermediate', color: '#F59E0B', levels: 20 },
+    { key: 'advanced', label: 'Advanced', color: '#EF4444', levels: 20 },
+    { key: 'expert', label: 'Expert', color: '#8B5CF6', levels: 20 },
+    { key: 'master', label: 'Master', color: '#DC2626', levels: 20 },
   ];
 
   useEffect(() => {
