@@ -300,18 +300,23 @@ const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({ navigation }) => 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#0F0F23', // Modern dark blue
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 15,
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 20,
+    backgroundColor: 'rgba(15, 15, 35, 0.95)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   backButton: {
-    padding: 8,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   backButtonText: {
     color: '#FFFFFF',
@@ -324,19 +329,24 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 24,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   headerSubtitle: {
-    color: '#A0A0A0',
+    color: '#8B8B9A',
     fontSize: 14,
-    marginTop: 2,
+    marginTop: 4,
+    fontWeight: '500',
   },
   settingsButton: {
-    padding: 8,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   settingsButtonText: {
     fontSize: 20,
+    color: '#FFFFFF',
   },
   dailyBonusContainer: {
     marginHorizontal: 20,
