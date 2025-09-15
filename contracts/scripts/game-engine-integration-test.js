@@ -12,7 +12,9 @@ async function main() {
   };
 
   // Get signers
-  const [deployer, testUser] = await ethers.getSigners();
+  const signers = await ethers.getSigners();
+  const deployer = signers[0];
+  const testUser = signers[1] || deployer; // Use deployer if no second signer
   console.log("👤 Deployer:", deployer.address);
   console.log("👤 Test User:", testUser.address);
 
@@ -43,7 +45,7 @@ async function main() {
       const gasPriceWithBuffer = gasPrice.gasPrice * 200n / 100n;
 
       // Create a mock signature for testing
-      const mockSignature = ethers.utils.hexlify(ethers.utils.randomBytes(65));
+      const mockSignature = ethers.hexlify(ethers.randomBytes(65));
       
       const claimTx = await rewards.claimLevelReward.populateTransaction(
         1, // Level 1
@@ -149,7 +151,7 @@ async function main() {
       const gasPrice = await ethers.provider.getFeeData();
       const gasPriceWithBuffer = gasPrice.gasPrice * 200n / 100n;
 
-      const mockSignature = ethers.utils.hexlify(ethers.utils.randomBytes(65));
+      const mockSignature = ethers.hexlify(ethers.randomBytes(65));
       
       const claimTx = await rewards.claimComboReward.populateTransaction(
         5, // 5 combos
@@ -251,8 +253,8 @@ async function main() {
 
       const actions = [
         { name: "Daily Bonus Claim", gas: await ethers.provider.estimateGas(await rewards.claimDailyBonus.populateTransaction()) },
-        { name: "Level Completion", gas: await ethers.provider.estimateGas(await rewards.claimLevelReward.populateTransaction(1, 1000, ethers.utils.hexlify(ethers.utils.randomBytes(65)))) },
-        { name: "Combo Reward", gas: await ethers.provider.estimateGas(await rewards.claimComboReward.populateTransaction(5, ethers.utils.hexlify(ethers.utils.randomBytes(65)))) },
+        { name: "Level Completion", gas: await ethers.provider.estimateGas(await rewards.claimLevelReward.populateTransaction(1, 1000, ethers.hexlify(ethers.randomBytes(65)))) },
+        { name: "Combo Reward", gas: await ethers.provider.estimateGas(await rewards.claimComboReward.populateTransaction(5, ethers.hexlify(ethers.randomBytes(65)))) },
         { name: "NFT Minting", gas: await ethers.provider.estimateGas(await nftGem.mintGem.populateTransaction(testUser.address, 1, 1, 1, 25)) },
       ];
 

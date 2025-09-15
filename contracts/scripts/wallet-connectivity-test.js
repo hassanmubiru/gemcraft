@@ -17,7 +17,9 @@ async function main() {
   };
 
   // Get signers
-  const [deployer, testUser] = await ethers.getSigners();
+  const signers = await ethers.getSigners();
+  const deployer = signers[0];
+  const testUser = signers[1] || deployer; // Use deployer if no second signer
   console.log("👤 Deployer:", deployer.address);
   console.log("👤 Test User:", testUser.address);
 
