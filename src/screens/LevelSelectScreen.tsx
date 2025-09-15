@@ -107,13 +107,13 @@ const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({ navigation }) => 
     
     switch (status) {
       case 'completed':
-        return '✅';
+        return '✓';
       case 'unlocked':
-        return '🎮';
+        return '▶';
       case 'locked':
-        return '🔒';
+        return '⏸';
       default:
-        return '❓';
+        return '?';
     }
   };
 
